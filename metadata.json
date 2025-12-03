@@ -1,0 +1,5 @@
+{
+  "name": "SmartProcure Agent",
+  "description": "A comprehensive procurement proxy management system designed for agents to track orders, logistics, and finances. Features AI-powered order parsing to quickly digitize unstructured text data.",
+  "requestFramePermissions": []
+}

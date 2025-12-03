@@ -1,0 +1,96 @@
+import { GoogleGenAI, Type } from "@google/genai";
+
+const getAiClient = () => {
+  // Safe access for browser environments where process might be undefined
+  let apiKey = '';
+  try {
+    apiKey = process.env.API_KEY || '';
+  } catch (e) {
+    console.warn("process.env access failed, checking alternatives");
+  }
+
+  if (!apiKey) {
+    console.warn("API_KEY is not set in the environment.");
+    return null;
+  }
+  return new GoogleGenAI({ apiKey });
+};
+
+export const parseOrderText = async (text: string): Promise<any> => {
+  const ai = getAiClient();
+  if (!ai) throw new Error("API Key missing");
+
+  const prompt = `
+    You are a smart procurement assistant. Analyze the following Chinese or English text which describes a procurement order.
+    Extract the following details:
+    - itemName: The name of the product (Keep it concise, translate to Chinese if mixed).
+    - quantity: Number of items (number).
+    - priceUSD: Price per unit in USD (number).
+    - buyerAddress: The full shipping address including name and phone if available.
+    - platform: The buying platform (e.g. Amazon, Taobao, 1688).
+    
+    If a field is missing, make a reasonable guess based on context or leave it null.
+    
+    Example Input: "帮我买5个iPhone 15手机壳，发到深圳市南山区科技园，李四 13800000000，单价12美金，亚马逊买"
+    Example Output JSON: {"itemName": "iPhone 15手机壳", "quantity": 5, "priceUSD": 12, "buyerAddress": "深圳市南山区科技园，李四 13800000000", "platform": "Amazon"}
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        { text: prompt },
+        { text: `Input text to parse: "${text}"` }
+      ],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            itemName: { type: Type.STRING },
+            quantity: { type: Type.NUMBER },
+            priceUSD: { type: Type.NUMBER },
+            buyerAddress: { type: Type.STRING },
+            platform: { type: Type.STRING },
+          }
+        }
+      }
+    });
+    
+    if (response.text) {
+        return JSON.parse(response.text);
+    }
+    return null;
+  } catch (error) {
+    console.error("Gemini Parse Error:", error);
+    throw error;
+  }
+};
+
+export const generateStatusUpdate = async (order: any): Promise<string> => {
+    const ai = getAiClient();
+    if (!ai) return "Error: API Key missing";
+
+    const prompt = `
+      Create a polite notification message in Chinese to the customer about their order status.
+      
+      Order Details:
+      Item: ${order.itemName}
+      Current Status: ${order.status}
+      Tracking Number: ${order.trackingNumber || 'Not available yet'}
+      
+      The tone should be professional and reassuring.
+      Only return the message content.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt
+        });
+        return response.text || "Could not generate message.";
+    } catch (e) {
+        console.error(e);
+        return "Error generating message.";
+    }
+}
