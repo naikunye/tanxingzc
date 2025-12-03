@@ -46,4 +46,9 @@ export interface OrderStats {
   deliveredOrders: number;
 }
 
+export interface SupabaseConfig {
+  url: string;
+  key: string;
+}
+
 export type ViewState = 'dashboard' | 'list' | 'add' | 'edit';
