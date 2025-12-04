@@ -221,7 +221,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                         <div className="flex flex-col gap-2">
                                             {order.trackingNumber && (
                                                 <div className="flex items-center gap-2 text-xs">
-                                                    <span className="text-slate-500 font-medium w-16">发货单号:</span>
+                                                    <span className="text-slate-500 font-medium w-16">采购单号:</span>
                                                     <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded font-mono border border-indigo-100 flex-1 truncate">{order.trackingNumber}</span>
                                                     <button 
                                                         onClick={(e) => open17Track(order.trackingNumber!, e)}
@@ -233,7 +233,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             )}
                                             {order.supplierTrackingNumber && (
                                                 <div className="flex items-center gap-2 text-xs">
-                                                    <span className="text-slate-500 font-medium w-16">采购单号:</span>
+                                                    <span className="text-slate-500 font-medium w-16">平台单号:</span>
                                                     <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded font-mono border border-slate-200 flex-1 truncate">{order.supplierTrackingNumber}</span>
                                                     <button 
                                                         onClick={(e) => open17Track(order.supplierTrackingNumber!, e)}
@@ -328,7 +328,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                     <button 
                                                         onClick={(e) => open17Track(order.trackingNumber!, e)}
                                                         className="flex items-center gap-1.5 text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100 transition-colors font-mono w-full"
-                                                        title="查询发货物流"
+                                                        title="查询采购单号"
                                                     >
                                                         <Truck size={12} /> {order.trackingNumber}
                                                     </button>
@@ -337,9 +337,9 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                      <button 
                                                         onClick={(e) => open17Track(order.supplierTrackingNumber!, e)}
                                                         className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-200 hover:bg-slate-100 transition-colors font-mono w-full mt-1"
-                                                        title="查询采购物流"
+                                                        title="查询平台单号"
                                                     >
-                                                        <span className="text-[10px] text-slate-400">采:</span> {order.supplierTrackingNumber}
+                                                        <span className="text-[10px] text-slate-400">平:</span> {order.supplierTrackingNumber}
                                                     </button>
                                                 )}
                                                 {!order.trackingNumber && !order.supplierTrackingNumber && (

@@ -250,7 +250,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">采购运单号 (商家发货)</label>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">平台单号 (商家物流)</label>
                         <input 
                             type="text" 
                             name="supplierTrackingNumber" 
@@ -332,13 +332,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
                     </div>
 
                     <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">发货运单号 (发给客户)</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">采购单号 (物流追踪)</label>
                     <input 
                         type="text" 
                         name="trackingNumber" 
                         value={formData.trackingNumber || ''} 
                         onChange={handleChange}
-                        placeholder="填写尾程物流单号"
+                        placeholder="填写物流追踪单号"
                         className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-900 font-mono font-medium shadow-sm"
                     />
                     </div>
