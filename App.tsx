@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { ViewState, Order, SupabaseConfig } from './types';
 import { Dashboard } from './components/Dashboard';
 import { OrderList } from './components/OrderList';
 import { OrderForm } from './components/OrderForm';
-import { LayoutDashboard, ShoppingCart, PlusCircle, Settings, Box, LogOut, ShieldCheck, Cloud, CloudOff, Loader2, Database, Wifi, WifiOff, Copy, Check } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, PlusCircle, Settings, Box, LogOut, ShieldCheck, Cloud, CloudOff, Loader2, Database, Wifi, WifiOff, Copy, Check, ExternalLink, Globe } from 'lucide-react';
 import { initSupabase, fetchCloudOrders, saveCloudOrder, deleteCloudOrder } from './services/supabaseService';
 
 const STORAGE_KEY = 'smart_procure_data';
@@ -158,6 +159,21 @@ const App: React.FC = () => {
     </button>
   );
 
+  const PurchaseLink = ({ href, label, sub }: { href: string, label: string, sub: string }) => (
+    <a 
+      href={href} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="flex items-center justify-between w-full px-4 py-2.5 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all group border border-transparent hover:border-slate-100"
+    >
+      <div className="flex flex-col items-start">
+        <span className="text-sm font-medium">{label}</span>
+        <span className="text-[10px] text-slate-400 font-mono group-hover:text-indigo-400">{sub}</span>
+      </div>
+      <ExternalLink size={14} className="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-400" />
+    </a>
+  );
+
   const getHeaderTitle = () => {
       switch(view) {
           case 'add': return '录入新订单';
@@ -171,8 +187,8 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col md:flex-row font-sans text-slate-800">
       
       {/* Sidebar */}
-      <aside className="w-full md:w-72 bg-white border-r border-slate-200 flex-shrink-0 md:h-screen sticky top-0 z-30 shadow-sm flex flex-col">
-        <div className="p-8 flex items-center gap-3">
+      <aside className="w-full md:w-72 bg-white border-r border-slate-200 flex-shrink-0 md:h-screen sticky top-0 z-30 shadow-sm flex flex-col overflow-y-auto custom-scrollbar">
+        <div className="p-8 flex items-center gap-3 shrink-0">
           <div className="bg-gradient-to-tr from-indigo-600 to-violet-600 p-2.5 rounded-xl shadow-lg shadow-indigo-200">
              <Box className="text-white" size={26} strokeWidth={2.5} />
           </div>
@@ -186,8 +202,8 @@ const App: React.FC = () => {
           <NavItem target="dashboard" icon={LayoutDashboard} label="概览中心" />
           <NavItem target="list" icon={ShoppingCart} label="订单列表" />
           
-          <div className="pt-8 pb-2">
-            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">快捷操作</p>
+          <div className="pt-6 pb-2">
+            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">快捷操作</p>
             <button
                 onClick={() => { setEditingOrder(null); setView('add'); }}
                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group border border-dashed border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 ${
@@ -200,9 +216,20 @@ const App: React.FC = () => {
                 <span className="font-semibold tracking-wide text-indigo-600">新建订单</span>
             </button>
           </div>
+
+          <div className="pt-4 pb-2">
+            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">常用采购平台</p>
+            <div className="space-y-1">
+              <PurchaseLink href="https://www.amazon.com" label="Amazon 亚马逊" sub="amazon.com" />
+              <PurchaseLink href="https://www.walmart.com" label="Walmart 沃尔玛" sub="walmart.com" />
+              <PurchaseLink href="https://www.ebay.com" label="eBay 易贝" sub="ebay.com" />
+              <PurchaseLink href="https://www.1688.com" label="1688 阿里巴巴" sub="1688.com" />
+              <PurchaseLink href="https://www.aliexpress.com" label="AliExpress 速卖通" sub="aliexpress.com" />
+            </div>
+          </div>
         </nav>
 
-        <div className="p-6 border-t border-slate-100">
+        <div className="p-6 border-t border-slate-100 shrink-0">
              <button 
                 onClick={() => setShowSettings(true)}
                 className={`w-full mb-4 px-4 py-3 rounded-xl border flex items-center gap-3 transition-all ${
