@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Order, OrderStatus, OrderStatusCN, TIMELINE_STEPS } from '../types';
-import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag, CloudLightning } from 'lucide-react';
+import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag, CloudLightning, AlertTriangle } from 'lucide-react';
 import { generateStatusUpdate } from '../services/geminiService';
 
 interface OrderListProps {
@@ -28,7 +28,16 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
     return matchesStatus && matchesSearch;
   });
 
-  const getStatusBadge = (status: OrderStatus) => {
+  const checkDelay = (order: Order) => {
+    if (order.status !== OrderStatus.PURCHASED) return false;
+    const purchaseTime = new Date(order.purchaseDate).getTime();
+    const now = new Date().getTime();
+    const diffHours = (now - purchaseTime) / (1000 * 60 * 60);
+    return diffHours > 48;
+  };
+
+  const getStatusBadge = (order: Order) => {
+    const status = order.status;
     let colors = '';
     switch(status) {
       case OrderStatus.DELIVERED: colors = 'bg-emerald-100 text-emerald-700 border-emerald-200'; break;
@@ -38,10 +47,20 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
       case OrderStatus.CANCELLED: colors = 'bg-red-50 text-red-600 border-red-100'; break;
       default: colors = 'bg-slate-100 text-slate-600 border-slate-200';
     }
+
+    const isDelayed = checkDelay(order);
+
     return (
-        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${colors} whitespace-nowrap inline-flex items-center`}>
-            {OrderStatusCN[status]}
-        </span>
+        <div className="flex items-center gap-1">
+            <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${colors} whitespace-nowrap inline-flex items-center`}>
+                {OrderStatusCN[status]}
+            </span>
+            {isDelayed && (
+                <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200 flex items-center" title="超过48h未发货">
+                    <AlertTriangle size={10} />
+                </span>
+            )}
+        </div>
     );
   };
 
@@ -188,7 +207,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                     <Package size={32} className="text-slate-300" />
                                 )}
                                 <div className="absolute top-2 left-2">
-                                     {getStatusBadge(order.status)}
+                                     {getStatusBadge(order)}
                                 </div>
                             </div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -311,7 +330,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            {getStatusBadge(order.status)}
+                                            {getStatusBadge(order)}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="font-medium text-slate-900">${(order.priceUSD * order.quantity).toFixed(2)}</div>
