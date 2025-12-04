@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, OrderStatusCN } from '../types';
 import { parseOrderText } from '../services/geminiService';
-import { Wand2, Save, X, Loader2, UploadCloud, FileText, ChevronRight } from 'lucide-react';
+import { Wand2, Save, X, Loader2, UploadCloud, FileText, ChevronRight, Truck } from 'lucide-react';
 
 interface OrderFormProps {
   initialOrder?: Order | null;
@@ -83,6 +84,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
       platform: formData.platform || '其他',
       status: formData.status || OrderStatus.PENDING,
       trackingNumber: formData.trackingNumber || '',
+      supplierTrackingNumber: formData.supplierTrackingNumber || '',
       imageUrl: formData.imageUrl || '',
       notes: formData.notes || ''
     };
@@ -151,7 +153,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
                 <div className="space-y-6">
                     <div className="flex items-center gap-2 text-slate-900 border-b border-slate-100 pb-3 mb-6">
                         <FileText size={18} className="text-indigo-500" />
-                        <h3 className="text-sm font-bold uppercase tracking-wider">货物详情</h3>
+                        <h3 className="text-sm font-bold uppercase tracking-wider">货物与采购</h3>
                     </div>
                     
                     <div>
@@ -196,15 +198,40 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
                     </div>
 
                     <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">采购平台</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">采购平台 (预设美国平台)</label>
                     <input 
                         type="text" 
                         name="platform" 
                         value={formData.platform || ''} 
                         onChange={handleChange}
-                        placeholder="Amazon, Taobao..."
+                        list="platform-options"
+                        placeholder="选择或输入平台，如 Amazon..."
                         className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm"
                     />
+                    <datalist id="platform-options">
+                        <option value="Amazon">Amazon</option>
+                        <option value="TikTok Shop">TikTok Shop</option>
+                        <option value="eBay">eBay</option>
+                        <option value="Walmart">Walmart</option>
+                        <option value="Costco">Costco</option>
+                        <option value="Temu">Temu</option>
+                        <option value="Shein">Shein</option>
+                        <option value="Best Buy">Best Buy</option>
+                        <option value="Target">Target</option>
+                        <option value="AliExpress">AliExpress</option>
+                    </datalist>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">采购运单号 (商家发货)</label>
+                        <input 
+                            type="text" 
+                            name="supplierTrackingNumber" 
+                            value={formData.supplierTrackingNumber || ''} 
+                            onChange={handleChange}
+                            placeholder="填写供应商发货单号"
+                            className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-900 font-mono font-medium shadow-sm"
+                        />
                     </div>
 
                     <div>
@@ -234,7 +261,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
                 {/* Right Column: Logistics Info */}
                 <div className="space-y-6">
                     <div className="flex items-center gap-2 text-slate-900 border-b border-slate-100 pb-3 mb-6">
-                        <UploadCloud size={18} className="text-indigo-500" />
+                        <Truck size={18} className="text-indigo-500" />
                         <h3 className="text-sm font-bold uppercase tracking-wider">物流与收货</h3>
                     </div>
 
@@ -278,13 +305,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
                     </div>
 
                     <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">物流单号</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">发货运单号 (发给客户)</label>
                     <input 
                         type="text" 
                         name="trackingNumber" 
                         value={formData.trackingNumber || ''} 
                         onChange={handleChange}
-                        placeholder="填写运单号"
+                        placeholder="填写尾程物流单号"
                         className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-900 font-mono font-medium shadow-sm"
                     />
                     </div>

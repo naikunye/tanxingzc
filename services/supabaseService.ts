@@ -4,6 +4,17 @@ import { Order, SupabaseConfig } from '../types';
 let supabase: SupabaseClient | null = null;
 
 export const initSupabase = (config: SupabaseConfig) => {
+  // Validate URL format before attempting to create client
+  if (!config.url || !config.url.startsWith('http')) {
+    console.warn("Skipping Supabase init: Invalid URL format");
+    return false;
+  }
+  
+  if (!config.key) {
+    console.warn("Skipping Supabase init: Missing Key");
+    return false;
+  }
+
   try {
     supabase = createClient(config.url, config.key);
     return true;

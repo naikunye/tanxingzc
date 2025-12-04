@@ -1,3 +1,4 @@
+
 export enum OrderStatus {
   PENDING = 'Pending',
   PURCHASED = 'Purchased',
@@ -33,7 +34,8 @@ export interface Order {
   purchaseDate: string; // ISO Date string
   platform: string;
   status: OrderStatus;
-  trackingNumber?: string;
+  trackingNumber?: string; // Logistics to customer
+  supplierTrackingNumber?: string; // Tracking from supplier to agent
   imageUrl?: string; // Base64 or URL
   notes?: string;
   lastUpdated: string;

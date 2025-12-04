@@ -3,7 +3,7 @@ import { ViewState, Order, SupabaseConfig } from './types';
 import { Dashboard } from './components/Dashboard';
 import { OrderList } from './components/OrderList';
 import { OrderForm } from './components/OrderForm';
-import { LayoutDashboard, ShoppingCart, PlusCircle, Settings, Box, LogOut, ShieldCheck, Cloud, CloudOff, Loader2, Database, Wifi, WifiOff } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, PlusCircle, Settings, Box, LogOut, ShieldCheck, Cloud, CloudOff, Loader2, Database, Wifi, WifiOff, Copy, Check } from 'lucide-react';
 import { initSupabase, fetchCloudOrders, saveCloudOrder, deleteCloudOrder } from './services/supabaseService';
 
 const STORAGE_KEY = 'smart_procure_data';
@@ -20,6 +20,7 @@ const App: React.FC = () => {
   const [cloudConfig, setCloudConfig] = useState<SupabaseConfig>({ url: '', key: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // Load Cloud Config on Mount
   useEffect(() => {
@@ -28,7 +29,8 @@ const App: React.FC = () => {
       try {
         const parsed = JSON.parse(savedConfig);
         setCloudConfig(parsed);
-        if (parsed.url && parsed.key) {
+        // Stricter check before connecting
+        if (parsed.url && parsed.url.startsWith('http') && parsed.key) {
            connectToCloud(parsed);
         } else {
            loadLocalOrders();
@@ -67,6 +69,9 @@ const App: React.FC = () => {
         alert("连接云端失败，请检查 URL 和 Key，并确保数据库表 'orders' 已创建。");
         loadLocalOrders();
       }
+    } else {
+      // Init failed (usually validation)
+      setIsCloudMode(false);
     }
     setIsLoading(false);
   };
@@ -77,6 +82,13 @@ const App: React.FC = () => {
     setCloudConfig({ url: '', key: '' });
     loadLocalOrders();
     setShowSettings(false);
+  };
+
+  const handleCopyConfig = () => {
+    const textToCopy = `Hi，这是我们的采购系统云端配置：\n\nProject URL: ${cloudConfig.url}\nAnon Key: ${cloudConfig.key}\n\n请在"云端设置"中填入即可同步数据。`;
+    navigator.clipboard.writeText(textToCopy);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
   };
 
   const handleSaveOrder = async (order: Order) => {
@@ -287,7 +299,7 @@ const App: React.FC = () => {
                                         value={cloudConfig.url}
                                         onChange={(e) => setCloudConfig({...cloudConfig, url: e.target.value})}
                                         placeholder="https://xyz.supabase.co"
-                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono"
                                     />
                                 </div>
                                 <div>
@@ -297,17 +309,23 @@ const App: React.FC = () => {
                                         value={cloudConfig.key}
                                         onChange={(e) => setCloudConfig({...cloudConfig, key: e.target.value})}
                                         placeholder="eyJh..."
-                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono"
                                     />
                                 </div>
 
                                 <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 text-xs text-amber-800 font-mono overflow-x-auto">
                                     <p className="font-bold mb-1 font-sans">请在 Supabase SQL Editor 中运行：</p>
+                                    -- 1. 创建表<br/>
                                     create table orders (<br/>
                                     &nbsp;&nbsp;id text primary key,<br/>
                                     &nbsp;&nbsp;order_data jsonb,<br/>
-                                    &nbsp;&nbsp;created_at timestamptz default now()<br/>
-                                    );
+                                    &nbsp;&nbsp;created_at timestamptz default now(),<br/>
+                                    &nbsp;&nbsp;updated_at timestamptz default now()<br/>
+                                    );<br/><br/>
+                                    -- 2. 开启行级安全策略<br/>
+                                    alter table orders enable row level security;<br/><br/>
+                                    -- 3. 允许所有读写操作<br/>
+                                    create policy "Public Access" on orders for all using (true) with check (true);
                                 </div>
 
                                 <button 
@@ -325,9 +343,18 @@ const App: React.FC = () => {
                                 </div>
                                 <h4 className="font-bold text-slate-800">已连接云端</h4>
                                 <p className="text-xs text-slate-500 mt-1 mb-6">数据正在实时同步中</p>
+                                
+                                <button 
+                                    onClick={handleCopyConfig}
+                                    className="w-full mb-3 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm hover:bg-slate-800 font-medium flex items-center justify-center gap-2"
+                                >
+                                    {copySuccess ? <Check size={16} /> : <Copy size={16} />}
+                                    {copySuccess ? '已复制！' : '复制配置给同事'}
+                                </button>
+
                                 <button 
                                     onClick={handleDisconnectCloud}
-                                    className="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50 font-medium"
+                                    className="w-full px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50 font-medium"
                                 >
                                     断开连接 (切换回本地)
                                 </button>
