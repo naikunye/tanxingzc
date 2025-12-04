@@ -11,11 +11,22 @@ interface OrderFormProps {
 }
 
 export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCancel }) => {
-  const [formData, setFormData] = useState<Partial<Order>>({
+  const defaultFormData: Partial<Order> = {
     status: OrderStatus.PENDING,
     quantity: 1,
-    purchaseDate: new Date().toISOString().split('T')[0]
-  });
+    purchaseDate: new Date().toISOString().split('T')[0],
+    itemName: '',
+    priceUSD: 0,
+    buyerAddress: '',
+    platform: '',
+    platformOrderId: '',
+    trackingNumber: '',
+    supplierTrackingNumber: '',
+    imageUrl: '',
+    notes: ''
+  };
+
+  const [formData, setFormData] = useState<Partial<Order>>(defaultFormData);
   
   const [aiInput, setAiInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -24,6 +35,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
   useEffect(() => {
     if (initialOrder) {
       setFormData(initialOrder);
+    } else {
+      setFormData(defaultFormData);
     }
   }, [initialOrder]);
 

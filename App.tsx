@@ -1,38 +1,50 @@
 
 import React, { useState, useEffect } from 'react';
-import { ViewState, Order, SupabaseConfig } from './types';
+import { ViewState, Order, SupabaseConfig, AppSettings } from './types';
 import { Dashboard } from './components/Dashboard';
 import { OrderList } from './components/OrderList';
 import { OrderForm } from './components/OrderForm';
-import { LayoutDashboard, ShoppingCart, PlusCircle, Settings, Box, LogOut, ShieldCheck, Cloud, CloudOff, Loader2, Database, Wifi, WifiOff, Copy, Check, ExternalLink, Globe } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, PlusCircle, Settings, Box, LogOut, ShieldCheck, Cloud, CloudOff, Loader2, Database, Wifi, WifiOff, Copy, Check, ExternalLink, Globe, Truck } from 'lucide-react';
 import { initSupabase, fetchCloudOrders, saveCloudOrder, deleteCloudOrder } from './services/supabaseService';
+import { syncOrderLogistics } from './services/logisticsService';
 
 const STORAGE_KEY = 'smart_procure_data';
-const CLOUD_CONFIG_KEY = 'smart_procure_cloud_config';
+const SETTINGS_KEY = 'smart_procure_settings';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('dashboard');
   const [orders, setOrders] = useState<Order[]>([]);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   
-  // Cloud State
+  // Settings & Cloud State
+  const [settings, setSettings] = useState<AppSettings>({
+    cloudConfig: { url: '', key: '' },
+    tracking17Token: ''
+  });
+  
   const [isCloudMode, setIsCloudMode] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [cloudConfig, setCloudConfig] = useState<SupabaseConfig>({ url: '', key: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
   const [copySuccess, setCopySuccess] = useState(false);
 
-  // Load Cloud Config on Mount
+  // Load Settings on Mount
   useEffect(() => {
-    const savedConfig = localStorage.getItem(CLOUD_CONFIG_KEY);
-    if (savedConfig) {
+    const savedSettings = localStorage.getItem(SETTINGS_KEY);
+    if (savedSettings) {
       try {
-        const parsed = JSON.parse(savedConfig);
-        setCloudConfig(parsed);
-        // Stricter check before connecting
-        if (parsed.url && parsed.url.startsWith('http') && parsed.key) {
-           connectToCloud(parsed);
+        const parsed = JSON.parse(savedSettings);
+        // Migration support for old structure if needed
+        const config = parsed.cloudConfig || parsed; 
+        
+        setSettings({
+            cloudConfig: config.url ? config : { url: '', key: '' },
+            tracking17Token: parsed.tracking17Token || ''
+        });
+
+        // Try connect if cloud config exists
+        if (config.url && config.url.startsWith('http') && config.key) {
+           connectToCloud(config);
         } else {
            loadLocalOrders();
         }
@@ -43,6 +55,11 @@ const App: React.FC = () => {
       loadLocalOrders();
     }
   }, []);
+
+  const saveSettings = (newSettings: AppSettings) => {
+      setSettings(newSettings);
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
+  };
 
   const loadLocalOrders = () => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -63,15 +80,13 @@ const App: React.FC = () => {
         const cloudData = await fetchCloudOrders();
         setOrders(cloudData);
         setIsCloudMode(true);
-        localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(config));
       } catch (e) {
         console.error("Failed to connect to cloud", e);
         setIsCloudMode(false);
-        alert("连接云端失败，请检查 URL 和 Key，并确保数据库表 'orders' 已创建。");
+        alert("连接云端失败，请检查 URL 和 Key");
         loadLocalOrders();
       }
     } else {
-      // Init failed (usually validation)
       setIsCloudMode(false);
     }
     setIsLoading(false);
@@ -79,21 +94,42 @@ const App: React.FC = () => {
 
   const handleDisconnectCloud = () => {
     setIsCloudMode(false);
-    localStorage.removeItem(CLOUD_CONFIG_KEY);
-    setCloudConfig({ url: '', key: '' });
+    const newSettings = { ...settings, cloudConfig: { url: '', key: '' } };
+    saveSettings(newSettings);
     loadLocalOrders();
     setShowSettings(false);
   };
 
+  const handleSyncLogistics = async () => {
+      setSyncStatus('syncing');
+      try {
+          const { updatedOrders, count, message } = await syncOrderLogistics(orders, settings.tracking17Token);
+          if (count > 0) {
+              setOrders(updatedOrders);
+              if (isCloudMode) {
+                  // Wait for all updates to complete
+                  await Promise.all(updatedOrders.map(o => saveCloudOrder(o)));
+              } else {
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedOrders));
+              }
+          }
+          alert(message);
+      } catch (e) {
+          alert('同步过程中发生错误');
+          console.error(e);
+      } finally {
+          setSyncStatus('idle');
+      }
+  };
+
   const handleCopyConfig = () => {
-    const textToCopy = `Hi，这是我们的采购系统云端配置：\n\nProject URL: ${cloudConfig.url}\nAnon Key: ${cloudConfig.key}\n\n请在"云端设置"中填入即可同步数据。`;
+    const textToCopy = `Hi，这是我们的采购系统云端配置：\n\nProject URL: ${settings.cloudConfig.url}\nAnon Key: ${settings.cloudConfig.key}\n\n请在"系统设置"中填入即可同步数据。`;
     navigator.clipboard.writeText(textToCopy);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2000);
   };
 
   const handleSaveOrder = async (order: Order) => {
-    // Optimistic UI update
     let newOrders = [...orders];
     const index = newOrders.findIndex(o => o.id === order.id);
     if (index >= 0) {
@@ -111,7 +147,6 @@ const App: React.FC = () => {
         await saveCloudOrder(order);
         setSyncStatus('idle');
       } catch (e) {
-        console.error("Cloud save failed", e);
         setSyncStatus('error');
         alert("保存到云端失败，请检查网络。");
       }
@@ -119,6 +154,11 @@ const App: React.FC = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newOrders));
       setSyncStatus('idle');
     }
+  };
+
+  const handleEditOrder = (order: Order) => {
+    setEditingOrder(order);
+    setView('edit');
   };
 
   const handleDeleteOrder = async (id: string) => {
@@ -131,7 +171,6 @@ const App: React.FC = () => {
           await deleteCloudOrder(id);
         } catch (e) {
           console.error("Cloud delete failed", e);
-          alert("云端删除失败");
         }
       } else {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newOrders));
@@ -139,14 +178,16 @@ const App: React.FC = () => {
     }
   };
 
-  const handleEditOrder = (order: Order) => {
-    setEditingOrder(order);
-    setView('edit');
-  };
-
   const NavItem = ({ target, icon: Icon, label }: { target: ViewState, icon: any, label: string }) => (
     <button
-      onClick={() => setView(target)}
+      onClick={() => {
+        if (target === 'add') {
+             setEditingOrder(null);
+             setView('add');
+        } else {
+             setView(target);
+        }
+      }}
       className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 group relative overflow-hidden ${
         view === target || (target === 'edit' && view === 'edit') || (target === 'add' && view === 'add')
           ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
@@ -288,6 +329,8 @@ const App: React.FC = () => {
               orders={orders} 
               onEdit={handleEditOrder} 
               onDelete={handleDeleteOrder} 
+              onSync={handleSyncLogistics}
+              isSyncing={syncStatus === 'syncing'}
             />
           )}
           {(view === 'add' || view === 'edit') && (
@@ -302,91 +345,105 @@ const App: React.FC = () => {
         {/* Settings Modal */}
         {showSettings && (
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-fade-in">
-                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 animate-fade-in max-h-[90vh] overflow-y-auto">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center sticky top-0 bg-white z-10">
                         <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                            <Cloud className="text-indigo-600" size={20} />
-                            云端协作设置 (Supabase)
+                            <Settings className="text-slate-600" size={20} />
+                            系统设置
                         </h3>
                         <button onClick={() => setShowSettings(false)} className="p-1 hover:bg-slate-200 rounded-full transition-colors"><Settings size={16} /></button>
                     </div>
-                    <div className="p-6 space-y-4">
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                            开启云端模式后，数据将存储在您的 Supabase 数据库中，实现多人实时协作。
-                            <br/>
-                            <a href="https://supabase.com" target="_blank" className="text-indigo-600 hover:underline">去注册 Supabase 账号 &rarr;</a>
-                        </p>
-
-                        {!isCloudMode ? (
-                            <>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">Project URL</label>
+                    
+                    <div className="p-6 space-y-6">
+                        
+                        {/* Cloud Section */}
+                        <div className="space-y-4">
+                            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <Cloud size={16} className="text-indigo-600"/> 云端协作 (Supabase)
+                            </h4>
+                            {!isCloudMode ? (
+                                <div className="space-y-3">
                                     <input 
                                         type="text" 
-                                        value={cloudConfig.url}
-                                        onChange={(e) => setCloudConfig({...cloudConfig, url: e.target.value})}
-                                        placeholder="https://xyz.supabase.co"
-                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono"
+                                        value={settings.cloudConfig.url}
+                                        onChange={(e) => {
+                                            const newConfig = {...settings.cloudConfig, url: e.target.value};
+                                            saveSettings({...settings, cloudConfig: newConfig});
+                                        }}
+                                        placeholder="Project URL (https://xyz.supabase.co)"
+                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono"
                                     />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">Anon Key</label>
                                     <input 
                                         type="password" 
-                                        value={cloudConfig.key}
-                                        onChange={(e) => setCloudConfig({...cloudConfig, key: e.target.value})}
-                                        placeholder="eyJh..."
-                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono"
+                                        value={settings.cloudConfig.key}
+                                        onChange={(e) => {
+                                            const newConfig = {...settings.cloudConfig, key: e.target.value};
+                                            saveSettings({...settings, cloudConfig: newConfig});
+                                        }}
+                                        placeholder="Anon Key (eyJh...)"
+                                        className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono"
                                     />
+                                    <div className="bg-amber-50 p-3 rounded-md text-[10px] text-amber-800 border border-amber-100">
+                                        <strong>注意：</strong> 首次使用请在 Supabase SQL Editor 运行以下代码：
+                                        <pre className="mt-1 bg-white p-2 rounded border border-amber-200 overflow-x-auto">
+                                            {`create table orders (
+  id text primary key,
+  order_data jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+alter table orders enable row level security;
+create policy "Public Access" on orders for all using (true) with check (true);`}
+                                        </pre>
+                                    </div>
+                                    <button 
+                                        onClick={() => connectToCloud(settings.cloudConfig)}
+                                        disabled={isLoading || !settings.cloudConfig.url || !settings.cloudConfig.key}
+                                        className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 flex justify-center items-center gap-2"
+                                    >
+                                        {isLoading ? <Loader2 className="animate-spin" /> : '连接云端并同步'}
+                                    </button>
                                 </div>
-
-                                <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 text-xs text-amber-800 font-mono overflow-x-auto">
-                                    <p className="font-bold mb-1 font-sans">请在 Supabase SQL Editor 中运行：</p>
-                                    -- 1. 创建表<br/>
-                                    create table orders (<br/>
-                                    &nbsp;&nbsp;id text primary key,<br/>
-                                    &nbsp;&nbsp;order_data jsonb,<br/>
-                                    &nbsp;&nbsp;created_at timestamptz default now(),<br/>
-                                    &nbsp;&nbsp;updated_at timestamptz default now()<br/>
-                                    );<br/><br/>
-                                    -- 2. 开启行级安全策略<br/>
-                                    alter table orders enable row level security;<br/><br/>
-                                    -- 3. 允许所有读写操作<br/>
-                                    create policy "Public Access" on orders for all using (true) with check (true);
+                            ) : (
+                                <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 text-center">
+                                    <p className="text-emerald-700 font-bold text-sm mb-2">已连接云端数据库</p>
+                                    <button 
+                                        onClick={handleCopyConfig}
+                                        className="w-full mb-2 px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 rounded text-xs font-medium flex items-center justify-center gap-2 hover:bg-emerald-50"
+                                    >
+                                        {copySuccess ? <Check size={14}/> : <Copy size={14} />}
+                                        {copySuccess ? '已复制' : '复制配置给同事'}
+                                    </button>
+                                    <button 
+                                        onClick={handleDisconnectCloud}
+                                        className="text-xs text-red-500 hover:underline"
+                                    >
+                                        断开连接
+                                    </button>
                                 </div>
+                            )}
+                        </div>
 
-                                <button 
-                                    onClick={() => connectToCloud(cloudConfig)}
-                                    disabled={isLoading || !cloudConfig.url || !cloudConfig.key}
-                                    className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 flex justify-center items-center gap-2"
-                                >
-                                    {isLoading ? <Loader2 className="animate-spin" /> : '连接云端并同步'}
-                                </button>
-                            </>
-                        ) : (
-                            <div className="text-center py-6">
-                                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600">
-                                    <CloudCheckIcon />
-                                </div>
-                                <h4 className="font-bold text-slate-800">已连接云端</h4>
-                                <p className="text-xs text-slate-500 mt-1 mb-6">数据正在实时同步中</p>
-                                
-                                <button 
-                                    onClick={handleCopyConfig}
-                                    className="w-full mb-3 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm hover:bg-slate-800 font-medium flex items-center justify-center gap-2"
-                                >
-                                    {copySuccess ? <Check size={16} /> : <Copy size={16} />}
-                                    {copySuccess ? '已复制！' : '复制配置给同事'}
-                                </button>
+                        <hr className="border-slate-100" />
 
-                                <button 
-                                    onClick={handleDisconnectCloud}
-                                    className="w-full px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50 font-medium"
-                                >
-                                    断开连接 (切换回本地)
-                                </button>
+                        {/* Logistics Section */}
+                        <div className="space-y-4">
+                            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <Truck size={16} className="text-amber-600"/> 物流追踪 (17TRACK)
+                            </h4>
+                            <div className="space-y-2">
+                                <p className="text-xs text-slate-500">填入 API Key 可自动更新物流状态。留空则使用本地智能推断。</p>
+                                <input 
+                                    type="password" 
+                                    value={settings.tracking17Token}
+                                    onChange={(e) => saveSettings({...settings, tracking17Token: e.target.value})}
+                                    placeholder="17TRACK API Access Token (可选)"
+                                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono"
+                                />
+                                <a href="https://api.17track.net/zh-cn/admin/settings" target="_blank" className="text-[10px] text-indigo-500 hover:underline block text-right">获取 API Key &rarr;</a>
                             </div>
-                        )}
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -396,9 +453,5 @@ const App: React.FC = () => {
     </div>
   );
 };
-
-const CloudCheckIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-)
 
 export default App;

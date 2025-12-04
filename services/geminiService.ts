@@ -2,13 +2,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const getAiClient = () => {
-  // Safe access for browser environments where process might be undefined
-  let apiKey = '';
-  try {
-    apiKey = process.env.API_KEY || '';
-  } catch (e) {
-    console.warn("process.env access failed, checking alternatives");
-  }
+  // Safe access for process.env in browser environments
+  const apiKey = (typeof process !== 'undefined' && process.env) 
+    ? process.env.API_KEY 
+    : undefined;
 
   if (!apiKey) {
     console.warn("API_KEY is not set in the environment.");
@@ -40,10 +37,12 @@ export const parseOrderText = async (text: string): Promise<any> => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: [
-        { text: prompt },
-        { text: `Input text to parse: "${text}"` }
-      ],
+      contents: {
+        parts: [
+           { text: prompt },
+           { text: `Input text to parse: "${text}"` }
+        ]
+      },
       config: {
         responseMimeType: "application/json",
         responseSchema: {

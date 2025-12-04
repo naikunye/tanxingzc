@@ -1,16 +1,18 @@
 
 import React, { useState } from 'react';
 import { Order, OrderStatus, OrderStatusCN, TIMELINE_STEPS } from '../types';
-import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag } from 'lucide-react';
+import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag, CloudLightning } from 'lucide-react';
 import { generateStatusUpdate } from '../services/geminiService';
 
 interface OrderListProps {
   orders: Order[];
   onEdit: (order: Order) => void;
   onDelete: (id: string) => void;
+  onSync: () => void;
+  isSyncing: boolean;
 }
 
-export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete }) => {
+export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onSync, isSyncing }) => {
   const [filter, setFilter] = useState<OrderStatus | 'All'>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [generatingId, setGeneratingId] = useState<string | null>(null);
@@ -114,7 +116,19 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete }
             />
         </div>
         
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+            <button
+                onClick={onSync}
+                disabled={isSyncing}
+                className="px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2 border border-indigo-200 disabled:opacity-50"
+                title="检查并更新所有订单的物流状态"
+            >
+                {isSyncing ? <Loader2 size={16} className="animate-spin" /> : <CloudLightning size={16} />}
+                <span className="hidden sm:inline">同步物流状态</span>
+            </button>
+            
+            <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block"></div>
+            
             <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
                  <button 
                     onClick={() => setViewMode('table')}
@@ -131,23 +145,24 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete }
                     <Grid size={16} /> <span className="hidden sm:inline">卡片</span>
                  </button>
             </div>
-            <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block"></div>
-            <div className="flex flex-wrap gap-1">
-                {['All', ...Object.values(OrderStatus)].map((s: any) => (
-                    <button
-                        key={s}
-                        onClick={() => setFilter(s)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                            filter === s 
-                            ? 'bg-slate-800 text-white border-slate-800 shadow-md' 
-                            : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                        }`}
-                    >
-                        {s === 'All' ? '全部' : OrderStatusCN[s as OrderStatus]}
-                    </button>
-                ))}
-            </div>
         </div>
+      </div>
+      
+      {/* Filter Tabs */}
+      <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-hide">
+         {['All', ...Object.values(OrderStatus)].map((s: any) => (
+            <button
+                key={s}
+                onClick={() => setFilter(s)}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap ${
+                    filter === s 
+                    ? 'bg-slate-800 text-white border-slate-800 shadow-md' 
+                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+            >
+                {s === 'All' ? '全部订单' : OrderStatusCN[s as OrderStatus]}
+            </button>
+         ))}
       </div>
 
       {filteredOrders.length === 0 ? (

@@ -54,4 +54,9 @@ export interface SupabaseConfig {
   key: string;
 }
 
+export interface AppSettings {
+  cloudConfig: SupabaseConfig;
+  tracking17Token: string;
+}
+
 export type ViewState = 'dashboard' | 'list' | 'add' | 'edit';
