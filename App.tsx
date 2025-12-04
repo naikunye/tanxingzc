@@ -177,8 +177,8 @@ const App: React.FC = () => {
              <Box className="text-white" size={26} strokeWidth={2.5} />
           </div>
           <div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none">智采助手</h1>
-              <p className="text-[10px] text-slate-400 font-bold mt-1 tracking-widest uppercase">Smart Procure</p>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none">探行科技</h1>
+              <p className="text-[10px] text-slate-400 font-bold mt-1 tracking-widest uppercase">智能采集管理平台</p>
           </div>
         </div>
         
