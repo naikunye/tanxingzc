@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Order, OrderStatus, OrderStatusCN, TIMELINE_STEPS } from '../types';
-import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical } from 'lucide-react';
+import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag } from 'lucide-react';
 import { generateStatusUpdate } from '../services/geminiService';
 
 interface OrderListProps {
@@ -21,7 +21,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete }
     const matchesSearch = o.itemName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           o.buyerAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           o.trackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          o.supplierTrackingNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+                          o.supplierTrackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          o.platformOrderId?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -182,6 +183,9 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete }
                                             <h3 className="text-lg font-bold text-slate-900 truncate pr-4">{order.itemName}</h3>
                                             <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
                                                 <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-medium">{order.platform}</span>
+                                                {order.platformOrderId && (
+                                                    <span className="text-slate-400 font-mono">ID: {order.platformOrderId}</span>
+                                                )}
                                                 <span>•</span>
                                                 <span>{order.purchaseDate}</span>
                                             </div>
@@ -278,7 +282,10 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete }
                                                 </div>
                                                 <div>
                                                     <div className="font-bold text-slate-900 line-clamp-1 max-w-[200px]">{order.itemName}</div>
-                                                    <div className="text-xs text-slate-500">{order.platform} · {order.purchaseDate}</div>
+                                                    <div className="text-xs text-slate-500">
+                                                        {order.platform}
+                                                        {order.platformOrderId && <span className="text-slate-400 ml-1 font-mono">#{order.platformOrderId}</span>}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, OrderStatusCN } from '../types';
 import { parseOrderText } from '../services/geminiService';
-import { Wand2, Save, X, Loader2, UploadCloud, FileText, ChevronRight, Truck } from 'lucide-react';
+import { Wand2, Save, X, Loader2, UploadCloud, FileText, ChevronRight, Truck, ShoppingCart } from 'lucide-react';
 
 interface OrderFormProps {
   initialOrder?: Order | null;
@@ -82,6 +82,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
       buyerAddress: formData.buyerAddress || '',
       purchaseDate: formData.purchaseDate || new Date().toISOString(),
       platform: formData.platform || '其他',
+      platformOrderId: formData.platformOrderId || '',
       status: formData.status || OrderStatus.PENDING,
       trackingNumber: formData.trackingNumber || '',
       supplierTrackingNumber: formData.supplierTrackingNumber || '',
@@ -124,7 +125,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
                             <textarea 
                                 value={aiInput}
                                 onChange={(e) => setAiInput(e.target.value)}
-                                placeholder="请粘贴任何混乱的订单文本，例如：'帮我买5个iPhone 15手机壳，发到深圳市南山区... 单价12美金'"
+                                placeholder="请粘贴任何混乱的订单文本，例如：'帮我买5个iPhone 15手机壳，发到深圳市南山区... 单价12美金，亚马逊买的，订单号123-456'"
                                 className="w-full p-4 pr-32 text-sm bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none min-h-[120px] transition-all placeholder-slate-400 text-slate-900 shadow-sm"
                             />
                             <button 
@@ -197,29 +198,42 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
                         </div>
                     </div>
 
-                    <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">采购平台 (预设美国平台)</label>
-                    <input 
-                        type="text" 
-                        name="platform" 
-                        value={formData.platform || ''} 
-                        onChange={handleChange}
-                        list="platform-options"
-                        placeholder="选择或输入平台，如 Amazon..."
-                        className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm"
-                    />
-                    <datalist id="platform-options">
-                        <option value="Amazon">Amazon</option>
-                        <option value="TikTok Shop">TikTok Shop</option>
-                        <option value="eBay">eBay</option>
-                        <option value="Walmart">Walmart</option>
-                        <option value="Costco">Costco</option>
-                        <option value="Temu">Temu</option>
-                        <option value="Shein">Shein</option>
-                        <option value="Best Buy">Best Buy</option>
-                        <option value="Target">Target</option>
-                        <option value="AliExpress">AliExpress</option>
-                    </datalist>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">采购平台</label>
+                            <input 
+                                type="text" 
+                                name="platform" 
+                                value={formData.platform || ''} 
+                                onChange={handleChange}
+                                list="platform-options"
+                                placeholder="选择或输入平台"
+                                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm"
+                            />
+                            <datalist id="platform-options">
+                                <option value="Amazon">Amazon</option>
+                                <option value="TikTok Shop">TikTok Shop</option>
+                                <option value="eBay">eBay</option>
+                                <option value="Walmart">Walmart</option>
+                                <option value="Costco">Costco</option>
+                                <option value="Temu">Temu</option>
+                                <option value="Shein">Shein</option>
+                                <option value="Best Buy">Best Buy</option>
+                                <option value="Target">Target</option>
+                                <option value="AliExpress">AliExpress</option>
+                            </datalist>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">平台订单号 (Order ID)</label>
+                            <input 
+                                type="text" 
+                                name="platformOrderId" 
+                                value={formData.platformOrderId || ''} 
+                                onChange={handleChange}
+                                placeholder="如: 114-1234567-..."
+                                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-900 font-mono font-medium shadow-sm"
+                            />
+                        </div>
                     </div>
 
                     <div>
@@ -229,7 +243,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
                             name="supplierTrackingNumber" 
                             value={formData.supplierTrackingNumber || ''} 
                             onChange={handleChange}
-                            placeholder="填写供应商发货单号"
+                            placeholder="填写供应商发货物流单号 (如: TBA...)"
                             className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all text-slate-900 font-mono font-medium shadow-sm"
                         />
                     </div>

@@ -33,6 +33,7 @@ export interface Order {
   buyerAddress: string;
   purchaseDate: string; // ISO Date string
   platform: string;
+  platformOrderId?: string; // Order ID from the platform (e.g. Amazon 112-xxx)
   status: OrderStatus;
   trackingNumber?: string; // Logistics to customer
   supplierTrackingNumber?: string; // Tracking from supplier to agent
