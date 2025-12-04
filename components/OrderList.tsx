@@ -235,6 +235,12 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                 <div className="flex items-center gap-2 text-xs">
                                                     <span className="text-slate-500 font-medium w-16">采购单号:</span>
                                                     <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded font-mono border border-slate-200 flex-1 truncate">{order.supplierTrackingNumber}</span>
+                                                    <button 
+                                                        onClick={(e) => open17Track(order.supplierTrackingNumber!, e)}
+                                                        className="flex items-center gap-1 text-slate-500 hover:text-slate-800 font-medium hover:underline shrink-0"
+                                                    >
+                                                        <Truck size={12} /> 查询
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
@@ -321,15 +327,20 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                 {order.trackingNumber && (
                                                     <button 
                                                         onClick={(e) => open17Track(order.trackingNumber!, e)}
-                                                        className="flex items-center gap-1.5 text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100 transition-colors font-mono"
+                                                        className="flex items-center gap-1.5 text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100 transition-colors font-mono w-full"
+                                                        title="查询发货物流"
                                                     >
                                                         <Truck size={12} /> {order.trackingNumber}
                                                     </button>
                                                 )}
                                                 {order.supplierTrackingNumber && (
-                                                     <div className="text-[10px] text-slate-400 font-mono pl-1">
-                                                        采: {order.supplierTrackingNumber}
-                                                     </div>
+                                                     <button 
+                                                        onClick={(e) => open17Track(order.supplierTrackingNumber!, e)}
+                                                        className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-200 hover:bg-slate-100 transition-colors font-mono w-full mt-1"
+                                                        title="查询采购物流"
+                                                    >
+                                                        <span className="text-[10px] text-slate-400">采:</span> {order.supplierTrackingNumber}
+                                                    </button>
                                                 )}
                                                 {!order.trackingNumber && !order.supplierTrackingNumber && (
                                                     <span className="text-slate-400 text-xs">-</span>
