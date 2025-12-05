@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Order, OrderStatus, OrderStatusCN, TIMELINE_STEPS } from '../types';
-import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag, CloudLightning, AlertTriangle, Columns } from 'lucide-react';
+import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag, CloudLightning, AlertTriangle, Columns, Download, Copy, CheckCircle2, StickyNote } from 'lucide-react';
 import { generateStatusUpdate } from '../services/geminiService';
 
 interface OrderListProps {
@@ -18,6 +18,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
   const [searchTerm, setSearchTerm] = useState('');
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'table' | 'board'>('table');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const filteredOrders = (orders || []).filter(o => {
     const matchesStatus = viewMode === 'board' ? true : (filter === 'All' || o.status === filter);
@@ -25,7 +26,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                           o.buyerAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           o.trackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           o.supplierTrackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          o.platformOrderId?.toLowerCase().includes(searchTerm.toLowerCase());
+                          o.platformOrderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (o.notes && o.notes.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
 
@@ -35,6 +37,57 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
     const now = new Date().getTime();
     const diffHours = (now - purchaseTime) / (1000 * 60 * 60);
     return diffHours > 48;
+  };
+
+  const handleCopy = (text: string, id: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleExport = () => {
+    // Define headers
+    const headers = [
+        "订单ID", "商品名称", "数量", "单价(USD)", "总价(USD)", 
+        "状态", "采购日期", "平台", "平台订单号", 
+        "收货地址", "采购物流单号", "平台发货单号", "备注"
+    ];
+
+    // Convert orders to CSV rows
+    const rows = filteredOrders.map(o => [
+        o.id,
+        `"${o.itemName.replace(/"/g, '""')}"`, // Escape quotes
+        o.quantity,
+        o.priceUSD,
+        (o.priceUSD * o.quantity).toFixed(2),
+        OrderStatusCN[o.status],
+        o.purchaseDate,
+        o.platform,
+        `"${o.platformOrderId || ''}"`, // Force string to prevent scientific notation
+        `"${o.buyerAddress.replace(/"/g, '""').replace(/\n/g, ' ')}"`, // Remove newlines
+        `"${o.trackingNumber || ''}"`,
+        `"${o.supplierTrackingNumber || ''}"`,
+        `"${o.notes || ''}"`
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [
+        headers.join(','), 
+        ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    // Create a Blob with BOM for Excel compatibility (UTF-8)
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    // Trigger download
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `采购订单导出_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getStatusBadge = (order: Order) => {
@@ -74,7 +127,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
   };
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
-      e.stopPropagation(); // CRITICAL: Stop event from bubbling to row click
+      e.stopPropagation(); 
       onDelete(id);
   }
 
@@ -189,8 +242,16 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                          </div>
                                     </div>
                                     
-                                    <div className="text-[10px] text-slate-400 font-mono mb-2 truncate">
-                                        {order.buyerAddress}
+                                    <div className="flex items-start gap-2 text-[10px] text-slate-500 font-mono mb-2 bg-slate-50 p-1.5 rounded border border-slate-100">
+                                        <MapPin size={10} className="mt-0.5 shrink-0" />
+                                        <span className="line-clamp-2">{order.buyerAddress}</span>
+                                        <button 
+                                            onClick={(e) => handleCopy(order.buyerAddress, `addr-kb-${order.id}`, e)}
+                                            className="ml-auto p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600"
+                                            title="复制地址"
+                                        >
+                                            {copiedId === `addr-kb-${order.id}` ? <CheckCircle2 size={10} className="text-green-500"/> : <Copy size={10} />}
+                                        </button>
                                     </div>
                                     
                                     <div className="flex items-center justify-between pt-2 border-t border-slate-50">
@@ -222,7 +283,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
             <input
                 type="text"
-                placeholder="搜索商品、地址或单号..."
+                placeholder="搜索商品、地址、备注或单号..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 focus:outline-none focus:bg-white transition-all placeholder-slate-400 text-slate-800"
@@ -230,6 +291,16 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
         </div>
         
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+             {/* Export Button */}
+             <button
+                onClick={handleExport}
+                className="px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors flex items-center gap-2 border border-emerald-200"
+                title="导出当前筛选结果为 Excel/CSV"
+            >
+                <Download size={16} />
+                <span className="hidden sm:inline">导出表格</span>
+            </button>
+
             <button
                 onClick={onSync}
                 disabled={isSyncing}
@@ -320,13 +391,20 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                     <div className="flex justify-between items-start mb-2">
                                         <div>
                                             <h3 className="text-lg font-bold text-slate-900 truncate pr-4">{order.itemName}</h3>
-                                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                                            <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500">
                                                 <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-medium">{order.platform}</span>
                                                 {order.platformOrderId && (
                                                     <span className="text-slate-400 font-mono">ID: {order.platformOrderId}</span>
                                                 )}
                                                 <span>•</span>
                                                 <span>{order.purchaseDate}</span>
+                                                
+                                                {order.notes && (
+                                                    <span className="ml-1 flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 font-medium truncate max-w-[200px]">
+                                                        <StickyNote size={10} />
+                                                        {order.notes}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="text-right">
@@ -336,9 +414,16 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                     </div>
                                     
                                     <div className="mt-4 space-y-3">
-                                        <div className="flex items-start gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                        <div className="flex items-start gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 group/addr">
                                             <MapPin size={14} className="mt-0.5 text-indigo-400 shrink-0" />
-                                            <span className="line-clamp-2 leading-relaxed">{order.buyerAddress}</span>
+                                            <span className="line-clamp-2 leading-relaxed flex-1">{order.buyerAddress}</span>
+                                            <button 
+                                                onClick={(e) => handleCopy(order.buyerAddress, `addr-grid-${order.id}`, e)}
+                                                className="p-1.5 bg-white border border-slate-200 rounded text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all opacity-0 group-hover/addr:opacity-100 shadow-sm"
+                                                title="复制地址"
+                                            >
+                                                 {copiedId === `addr-grid-${order.id}` ? <CheckCircle2 size={12} className="text-green-500"/> : <Copy size={12} />}
+                                            </button>
                                         </div>
 
                                         {/* Tracking Numbers Section */}
@@ -431,6 +516,12 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                         {order.platform}
                                                         {order.platformOrderId && <span className="text-slate-400 ml-1 font-mono">#{order.platformOrderId}</span>}
                                                     </div>
+                                                    {order.notes && (
+                                                        <div className="mt-1 text-xs text-amber-600 flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded w-fit max-w-[200px] border border-amber-100">
+                                                            <StickyNote size={10} className="shrink-0" />
+                                                            <span className="truncate">{order.notes}</span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
@@ -442,8 +533,17 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             <div className="text-xs text-slate-400">${order.priceUSD} x {order.quantity}</div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="line-clamp-2 text-slate-600 text-xs leading-relaxed" title={order.buyerAddress}>
-                                                {order.buyerAddress}
+                                            <div className="flex items-start gap-2 group/addr">
+                                                <div className="line-clamp-2 text-slate-600 text-xs leading-relaxed" title={order.buyerAddress}>
+                                                    {order.buyerAddress}
+                                                </div>
+                                                <button 
+                                                    onClick={(e) => handleCopy(order.buyerAddress, `addr-table-${order.id}`, e)}
+                                                    className="opacity-0 group-hover/addr:opacity-100 text-slate-400 hover:text-indigo-600 transition-opacity"
+                                                    title="复制地址"
+                                                >
+                                                     {copiedId === `addr-table-${order.id}` ? <CheckCircle2 size={12} className="text-green-500"/> : <Copy size={12} />}
+                                                </button>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
