@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Order, OrderStatus, OrderStatusCN, TIMELINE_STEPS } from '../types';
-import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag, CloudLightning, AlertTriangle } from 'lucide-react';
+import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag, CloudLightning, AlertTriangle, Columns } from 'lucide-react';
 import { generateStatusUpdate } from '../services/geminiService';
 
 interface OrderListProps {
@@ -10,16 +10,17 @@ interface OrderListProps {
   onDelete: (id: string) => void;
   onSync: () => void;
   isSyncing: boolean;
+  onStatusChange?: (id: string, newStatus: OrderStatus) => void;
 }
 
-export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onSync, isSyncing }) => {
+export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onSync, isSyncing, onStatusChange }) => {
   const [filter, setFilter] = useState<OrderStatus | 'All'>('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [generatingId, setGeneratingId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [viewMode, setViewMode] = useState<'grid' | 'table' | 'board'>('table');
 
   const filteredOrders = (orders || []).filter(o => {
-    const matchesStatus = filter === 'All' || o.status === filter;
+    const matchesStatus = viewMode === 'board' ? true : (filter === 'All' || o.status === filter);
     const matchesSearch = o.itemName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           o.buyerAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           o.trackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -120,6 +121,99 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
       );
   };
 
+  // --- Board View Logic ---
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+      e.dataTransfer.setData("orderId", id);
+      e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e: React.DragEvent, status: OrderStatus) => {
+      e.preventDefault();
+      const id = e.dataTransfer.getData("orderId");
+      if (id && onStatusChange) {
+          onStatusChange(id, status);
+      }
+  };
+
+  const renderKanbanBoard = () => {
+    const columns = Object.values(OrderStatus);
+    
+    return (
+        <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-220px)] snap-x">
+            {columns.map(status => {
+                const columnOrders = filteredOrders.filter(o => o.status === status);
+                return (
+                    <div 
+                        key={status} 
+                        className="flex-shrink-0 w-80 bg-slate-100 rounded-xl flex flex-col snap-center border border-slate-200"
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, status)}
+                    >
+                        {/* Column Header */}
+                        <div className="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl sticky top-0 z-10">
+                            <h3 className="text-sm font-bold text-slate-700">{OrderStatusCN[status]}</h3>
+                            <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-xs font-bold">{columnOrders.length}</span>
+                        </div>
+                        
+                        {/* Column Content */}
+                        <div className="p-2 overflow-y-auto flex-1 custom-scrollbar space-y-2">
+                            {columnOrders.map(order => (
+                                <div 
+                                    key={order.id} 
+                                    draggable 
+                                    onDragStart={(e) => handleDragStart(e, order.id)}
+                                    onClick={() => onEdit(order)}
+                                    className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-all cursor-move group select-none relative"
+                                >
+                                     {checkDelay(order) && (
+                                        <div className="absolute top-2 right-2 text-red-500 animate-pulse">
+                                            <AlertTriangle size={14} />
+                                        </div>
+                                    )}
+                                    <div className="flex gap-3 mb-2">
+                                         <div className="w-12 h-12 rounded bg-slate-50 border border-slate-100 shrink-0 overflow-hidden">
+                                            {order.imageUrl ? (
+                                                <img src={order.imageUrl} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-slate-300"><Package size={16} /></div>
+                                            )}
+                                         </div>
+                                         <div className="min-w-0">
+                                             <h4 className="text-sm font-bold text-slate-800 line-clamp-2 leading-tight mb-1">{order.itemName}</h4>
+                                             <p className="text-xs text-slate-500">${order.priceUSD} x {order.quantity}</p>
+                                         </div>
+                                    </div>
+                                    
+                                    <div className="text-[10px] text-slate-400 font-mono mb-2 truncate">
+                                        {order.buyerAddress}
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                                        <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">{order.platform}</span>
+                                        <div className="flex gap-1">
+                                            {order.trackingNumber && <Truck size={12} className="text-indigo-400" />}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {columnOrders.length === 0 && (
+                                <div className="h-24 border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center text-slate-300 text-xs">
+                                    空
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-20">
       {/* Controls */}
@@ -163,28 +257,39 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                  >
                     <Grid size={16} /> <span className="hidden sm:inline">卡片</span>
                  </button>
+                 <button 
+                    onClick={() => setViewMode('board')}
+                    className={`p-2 rounded-md transition-all flex items-center gap-2 text-xs font-medium ${viewMode === 'board' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                    title="看板模式"
+                 >
+                    <Columns size={16} /> <span className="hidden sm:inline">看板</span>
+                 </button>
             </div>
         </div>
       </div>
       
-      {/* Filter Tabs */}
-      <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-hide">
-         {['All', ...Object.values(OrderStatus)].map((s: any) => (
-            <button
-                key={s}
-                onClick={() => setFilter(s)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap ${
-                    filter === s 
-                    ? 'bg-slate-800 text-white border-slate-800 shadow-md' 
-                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                }`}
-            >
-                {s === 'All' ? '全部订单' : OrderStatusCN[s as OrderStatus]}
-            </button>
-         ))}
-      </div>
+      {/* Filter Tabs (Hidden in Board Mode) */}
+      {viewMode !== 'board' && (
+        <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-hide">
+             {['All', ...Object.values(OrderStatus)].map((s: any) => (
+                <button
+                    key={s}
+                    onClick={() => setFilter(s)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap ${
+                        filter === s 
+                        ? 'bg-slate-800 text-white border-slate-800 shadow-md' 
+                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                >
+                    {s === 'All' ? '全部订单' : OrderStatusCN[s as OrderStatus]}
+                </button>
+             ))}
+        </div>
+      )}
 
-      {filteredOrders.length === 0 ? (
+      {viewMode === 'board' ? (
+          renderKanbanBoard()
+      ) : filteredOrders.length === 0 ? (
         <div className="text-center py-24 bg-white rounded-xl border border-dashed border-slate-200">
             <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
                 <Package className="text-slate-300" size={32} />

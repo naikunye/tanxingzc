@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, OrderStatusCN } from '../types';
-import { parseOrderText } from '../services/geminiService';
-import { Wand2, Save, X, Loader2, UploadCloud, FileText, ChevronRight, Truck, ShoppingCart } from 'lucide-react';
+import { parseOrderText, parseOrderImage } from '../services/geminiService';
+import { Wand2, Save, X, Loader2, UploadCloud, FileText, ChevronRight, Truck, ShoppingCart, Image as ImageIcon } from 'lucide-react';
 
 interface OrderFormProps {
   initialOrder?: Order | null;
@@ -31,6 +31,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
   const [aiInput, setAiInput] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [error, setError] = useState('');
+  const [aiImagePreview, setAiImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialOrder) {
@@ -48,7 +49,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProductImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -59,18 +60,44 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
     }
   };
 
+  const handleAiImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setAiImagePreview(reader.result as string);
+              // Clear text input to avoid confusion, or keep both? Let's clear for now to indicate image mode
+              setAiInput(''); 
+          };
+          reader.readAsDataURL(file);
+      }
+  };
+
   const handleAiParse = async () => {
-    if (!aiInput.trim()) return;
+    if (!aiInput.trim() && !aiImagePreview) return;
     setIsAiLoading(true);
     setError('');
+    
     try {
-      const parsedData = await parseOrderText(aiInput);
+      let parsedData;
+      if (aiImagePreview) {
+          parsedData = await parseOrderImage(aiImagePreview);
+      } else {
+          parsedData = await parseOrderText(aiInput);
+      }
+
       if (parsedData) {
         setFormData(prev => ({
           ...prev,
           ...parsedData,
-          status: prev.status || OrderStatus.PENDING
+          status: prev.status || OrderStatus.PENDING,
+          // If we parsed an image, use it as the product image if one doesn't exist
+          imageUrl: (aiImagePreview && !prev.imageUrl) ? aiImagePreview : prev.imageUrl
         }));
+        setAiImagePreview(null); // Reset after success
+        setAiInput('');
+      } else {
+          setError('未能识别出有效信息，请重试');
       }
     } catch (err) {
       setError('识别失败，请检查网络或重试');
@@ -125,28 +152,50 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
         <div className="p-8 bg-white">
             {/* AI Parsing Section */}
             {!initialOrder && (
-                <div className="mb-10 bg-indigo-50/50 rounded-xl border border-indigo-100 overflow-hidden">
+                <div className="mb-10 bg-indigo-50/50 rounded-xl border border-indigo-100 overflow-hidden relative">
                     <div className="px-6 py-4 border-b border-indigo-100 bg-indigo-50/80 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Wand2 className="text-indigo-600" size={16} />
-                            <h3 className="font-semibold text-indigo-900 text-sm">智能粘贴识别</h3>
+                            <h3 className="font-semibold text-indigo-900 text-sm">智能识别 (AI Vision)</h3>
                         </div>
-                        <span className="text-xs text-indigo-600 bg-white px-2 py-1 rounded border border-indigo-100 font-medium">支持 微信/Excel/文本</span>
+                        <span className="text-xs text-indigo-600 bg-white px-2 py-1 rounded border border-indigo-100 font-medium">支持 截图/文本/Excel</span>
                     </div>
-                    <div className="p-6">
-                        <div className="relative">
-                            <textarea 
-                                value={aiInput}
-                                onChange={(e) => setAiInput(e.target.value)}
-                                placeholder="请粘贴任何混乱的订单文本，例如：'帮我买5个iPhone 15手机壳，发到深圳市南山区... 单价12美金，亚马逊买的，订单号123-456'"
-                                className="w-full p-4 pr-32 text-sm bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none min-h-[120px] transition-all placeholder-slate-400 text-slate-900 shadow-sm"
-                            />
-                            <button 
+                    <div className="p-6 flex flex-col md:flex-row gap-4">
+                        <div className="flex-1 relative">
+                            {aiImagePreview ? (
+                                <div className="relative w-full h-[120px] bg-slate-100 rounded-lg border border-indigo-200 flex items-center justify-center overflow-hidden group">
+                                    <img src={aiImagePreview} alt="AI Parse Preview" className="h-full object-contain" />
+                                    <div className="absolute inset-0 bg-black/20 hidden group-hover:flex items-center justify-center transition-all">
+                                        <button 
+                                            onClick={() => setAiImagePreview(null)}
+                                            className="bg-white/90 text-slate-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm"
+                                        >
+                                            移除图片
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <textarea 
+                                    value={aiInput}
+                                    onChange={(e) => setAiInput(e.target.value)}
+                                    placeholder="粘贴订单文本，或直接点击右侧上传截图..."
+                                    className="w-full p-4 text-sm bg-white border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:outline-none h-[120px] transition-all placeholder-slate-400 text-slate-900 shadow-sm resize-none"
+                                />
+                            )}
+                        </div>
+                        
+                        <div className="flex flex-col gap-2 shrink-0 md:w-32">
+                             <label className="flex-1 border border-dashed border-indigo-300 rounded-lg bg-white hover:bg-indigo-50 cursor-pointer transition-colors flex flex-col items-center justify-center p-2 group text-center h-[56px] md:h-auto">
+                                <ImageIcon className="text-indigo-400 group-hover:text-indigo-600 mb-1" size={20} />
+                                <span className="text-[10px] text-indigo-600 font-medium leading-tight">上传截图<br/>自动填写</span>
+                                <input type="file" className="hidden" accept="image/*" onChange={handleAiImageUpload} />
+                             </label>
+                             <button 
                                 onClick={handleAiParse}
-                                disabled={isAiLoading || !aiInput}
-                                className="absolute bottom-4 right-4 px-4 py-2 bg-indigo-600 text-white text-xs font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 shadow-sm transition-colors"
+                                disabled={isAiLoading || (!aiInput && !aiImagePreview)}
+                                className="h-10 md:h-auto md:flex-1 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm transition-colors"
                             >
-                                {isAiLoading ? <Loader2 className="animate-spin" size={14} /> : 'AI 自动填充'}
+                                {isAiLoading ? <Loader2 className="animate-spin" size={14} /> : '开始识别'}
                             </button>
                         </div>
                     </div>
@@ -267,7 +316,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onSave, onCa
                         <label className="cursor-pointer flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-slate-300 rounded-xl hover:bg-slate-50 hover:border-indigo-400 transition-all group bg-white">
                             <UploadCloud className="h-6 w-6 text-slate-400 group-hover:text-indigo-500 transition-colors mb-2" />
                             <span className="text-xs text-slate-500 font-medium group-hover:text-indigo-600">点击上传</span>
-                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                            <input type="file" className="hidden" accept="image/*" onChange={handleProductImageUpload} />
                         </label>
                         {formData.imageUrl && (
                             <div className="relative w-32 h-32 flex-shrink-0 border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm group">

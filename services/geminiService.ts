@@ -69,6 +69,64 @@ export const parseOrderText = async (text: string): Promise<any> => {
   }
 };
 
+export const parseOrderImage = async (base64Image: string): Promise<any> => {
+    const ai = getAiClient();
+    if (!ai) throw new Error("API Key missing");
+
+    // Remove header if present (e.g., "data:image/png;base64,")
+    const base64Data = base64Image.split(',')[1] || base64Image;
+
+    const prompt = `
+      Analyze this image of a product order, shopping cart, or chat log.
+      Extract the order details into JSON format.
+      - itemName: Product name.
+      - quantity: Quantity.
+      - priceUSD: Price in USD (if symbol is ¥/RMB, convert approx or keep number).
+      - buyerAddress: Address if visible.
+      - platform: Platform name (Amazon, eBay, etc) if recognizable.
+      - platformOrderId: Order ID if visible.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash", // Flash supports vision
+            contents: {
+                parts: [
+                    { text: prompt },
+                    { 
+                        inlineData: {
+                            mimeType: "image/jpeg", // Assuming generic image type, API is flexible
+                            data: base64Data
+                        }
+                    }
+                ]
+            },
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        itemName: { type: Type.STRING },
+                        quantity: { type: Type.NUMBER },
+                        priceUSD: { type: Type.NUMBER },
+                        buyerAddress: { type: Type.STRING },
+                        platform: { type: Type.STRING },
+                        platformOrderId: { type: Type.STRING },
+                    }
+                }
+            }
+        });
+
+        if (response.text) {
+            return JSON.parse(response.text);
+        }
+        return null;
+    } catch (error) {
+        console.error("Gemini Image Parse Error:", error);
+        throw error;
+    }
+};
+
 export const generateStatusUpdate = async (order: any): Promise<string> => {
     const ai = getAiClient();
     if (!ai) return "Error: API Key missing";

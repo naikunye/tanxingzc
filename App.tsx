@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ViewState, Order, SupabaseConfig, AppSettings } from './types';
+import { ViewState, Order, SupabaseConfig, AppSettings, OrderStatus } from './types';
 import { Dashboard } from './components/Dashboard';
 import { OrderList } from './components/OrderList';
 import { OrderForm } from './components/OrderForm';
@@ -129,7 +129,7 @@ const App: React.FC = () => {
     setTimeout(() => setCopySuccess(false), 2000);
   };
 
-  const handleSaveOrder = async (order: Order) => {
+  const handleSaveOrder = async (order: Order, silent: boolean = false) => {
     let newOrders = [...orders];
     const index = newOrders.findIndex(o => o.id === order.id);
     if (index >= 0) {
@@ -138,8 +138,12 @@ const App: React.FC = () => {
       newOrders.unshift(order);
     }
     setOrders(newOrders);
-    setView('list');
-    setEditingOrder(null);
+    
+    // Only switch view if not silent (silent used for kanban updates)
+    if (!silent) {
+        setView('list');
+        setEditingOrder(null);
+    }
     setSyncStatus('syncing');
 
     if (isCloudMode) {
@@ -148,11 +152,19 @@ const App: React.FC = () => {
         setSyncStatus('idle');
       } catch (e) {
         setSyncStatus('error');
-        alert("保存到云端失败，请检查网络。");
+        if (!silent) alert("保存到云端失败，请检查网络。");
       }
     } else {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newOrders));
       setSyncStatus('idle');
+    }
+  };
+
+  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
+    const order = orders.find(o => o.id === orderId);
+    if (order && order.status !== newStatus) {
+        const updatedOrder = { ...order, status: newStatus, lastUpdated: new Date().toISOString() };
+        handleSaveOrder(updatedOrder, true);
     }
   };
 
@@ -331,6 +343,7 @@ const App: React.FC = () => {
               onDelete={handleDeleteOrder} 
               onSync={handleSyncLogistics}
               isSyncing={syncStatus === 'syncing'}
+              onStatusChange={handleStatusChange}
             />
           )}
           {(view === 'add' || view === 'edit') && (
