@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Order, OrderStatus, OrderStatusCN, TIMELINE_STEPS, WarningRules } from '../types';
-import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag, CloudLightning, AlertTriangle, Columns, Download, Copy, CheckCircle2, StickyNote, Hash, Filter, Calendar, Tag, XCircle, CheckSquare, Square, X, RotateCcw, Plane, Upload, Brain, Sparkles, Wand2 } from 'lucide-react';
+import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag, CloudLightning, AlertTriangle, Columns, Download, Copy, CheckCircle2, StickyNote, Hash, Filter, Calendar, Tag, XCircle, CheckSquare, Square, X, RotateCcw, Plane, Upload, Brain, Sparkles, Wand2, Clock, AlertCircle, Hourglass } from 'lucide-react';
 import { generateStatusUpdate, parseNaturalLanguageSearch } from '../services/geminiService';
 import { parseCSV } from '../services/csvService';
 
@@ -340,46 +340,91 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
 
   const getStatusBadge = (order: Order) => {
     if (isTrash) {
-         return <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-red-50 text-red-600 border-red-200">已删除</span>;
+         return <span className="px-2.5 py-1 rounded-md text-[11px] font-bold border bg-red-50 text-red-600 border-red-200 flex items-center gap-1.5"><Trash2 size={12}/> 已删除</span>;
     }
     const status = order.status;
-    let colors = '';
+    let style = '';
+    let icon = null;
+    
     switch(status) {
-      case OrderStatus.DELIVERED: colors = 'bg-emerald-100 text-emerald-700 border-emerald-200'; break;
-      case OrderStatus.SHIPPED: colors = 'bg-blue-100 text-blue-700 border-blue-200'; break;
-      case OrderStatus.READY_TO_SHIP: colors = 'bg-amber-100 text-amber-700 border-amber-200'; break;
-      case OrderStatus.PURCHASED: colors = 'bg-indigo-100 text-indigo-700 border-indigo-200'; break;
-      case OrderStatus.CANCELLED: colors = 'bg-red-50 text-red-600 border-red-100'; break;
-      default: colors = 'bg-slate-100 text-slate-600 border-slate-200';
+      case OrderStatus.PENDING: 
+        style = 'bg-slate-100 text-slate-600 border-slate-200'; 
+        icon = <Clock size={12} />;
+        break;
+      case OrderStatus.PURCHASED: 
+        style = 'bg-blue-50 text-blue-600 border-blue-200'; 
+        icon = <ShoppingBag size={12} />;
+        break;
+      case OrderStatus.READY_TO_SHIP: 
+        style = 'bg-amber-50 text-amber-600 border-amber-200'; 
+        icon = <Package size={12} />;
+        break;
+      case OrderStatus.SHIPPED: 
+        style = 'bg-indigo-50 text-indigo-600 border-indigo-200'; 
+        icon = <Plane size={12} />;
+        break;
+      case OrderStatus.DELIVERED: 
+        style = 'bg-emerald-50 text-emerald-600 border-emerald-200'; 
+        icon = <CheckCircle2 size={12} />;
+        break;
+      case OrderStatus.CANCELLED: 
+        style = 'bg-red-50 text-red-600 border-red-200'; 
+        icon = <XCircle size={12} />;
+        break;
+      default: 
+        style = 'bg-slate-100 text-slate-600 border-slate-200';
     }
 
     const delayType = getDelayType(order);
 
     return (
-        <div className="flex flex-col items-start gap-1">
-            <div className="flex items-center gap-1">
-                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${colors} whitespace-nowrap inline-flex items-center`}>
+        <div className="flex flex-col items-start gap-1.5">
+            <div className="flex items-center gap-2">
+                <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold border ${style} whitespace-nowrap inline-flex items-center gap-1.5 transition-colors`}>
+                    {icon}
                     {OrderStatusCN[status]}
                 </span>
+                
+                {/* Warning Icons */}
                 {delayType === 'purchase' && (
-                    <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200 flex items-center" title={`超过 ${warningRules.purchaseTimeoutHours}h 未发货`}>
-                        <AlertTriangle size={10} />
-                    </span>
+                    <div className="relative group/warn">
+                         <span className="w-5 h-5 rounded-full bg-red-100 text-red-500 border border-red-200 flex items-center justify-center animate-pulse">
+                            <AlertTriangle size={10} strokeWidth={3} />
+                        </span>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover/warn:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">
+                            采购超时
+                        </div>
+                    </div>
                 )}
                 {delayType === 'shipping' && (
-                    <span className="px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-600 border border-orange-200 flex items-center" title={`物流 > ${warningRules.shippingTimeoutDays} 天 (未签收)`}>
-                        <Truck size={10} />
-                    </span>
+                     <div className="relative group/warn">
+                        <span className="w-5 h-5 rounded-full bg-orange-100 text-orange-500 border border-orange-200 flex items-center justify-center animate-pulse">
+                            <Hourglass size={10} strokeWidth={3} />
+                        </span>
+                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover/warn:opacity-100 whitespace-nowrap pointer-events-none transition-opacity">
+                            物流超时
+                        </div>
+                    </div>
                 )}
             </div>
+            
+            {/* Detailed Status Text */}
             {order.detailedStatus && (
-                <span className="text-[10px] text-slate-500 font-medium px-1 truncate max-w-[120px]" title={order.detailedStatus}>
-                    {order.detailedStatus}
-                </span>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium px-0.5" title={order.detailedStatus}>
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                    <span className="truncate max-w-[140px]">{order.detailedStatus}</span>
+                </div>
             )}
         </div>
     );
   };
+
+  const getProgress = (status: OrderStatus) => {
+      if (status === OrderStatus.CANCELLED) return 0;
+      const index = TIMELINE_STEPS.indexOf(status);
+      if (index === -1) return 0;
+      return Math.round(((index + 1) / TIMELINE_STEPS.length) * 100);
+  }
 
   const handleGenerateUpdate = async (order: Order, e: React.MouseEvent) => {
       e.preventDefault();
@@ -957,7 +1002,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
 
                                         {/* Procurement Source */}
                                         <td className="px-4 py-4 align-top">
-                                            <div className="space-y-2">
+                                            <div className="space-y-3">
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                                         {order.platform}
@@ -969,19 +1014,25 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                     )}
                                                 </div>
 
+                                                {/* Inbound Tracking Card */}
                                                 {order.supplierTrackingNumber ? (
-                                                    <div className="flex items-start gap-1.5 group/supplier" onClick={(e) => open17Track(order.supplierTrackingNumber!, e)}>
-                                                        <Truck size={12} className="text-slate-400 mt-0.5 shrink-0" />
-                                                        <div className="min-w-0">
-                                                            <div className="text-[10px] text-slate-400">商家发货 (入库)</div>
-                                                            <div className="text-xs font-mono text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:underline decoration-dashed cursor-pointer truncate max-w-[180px]">
+                                                    <div onClick={(e) => open17Track(order.supplierTrackingNumber!, e)} className="group/supplier cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all shadow-sm max-w-[200px]">
+                                                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
+                                                         <div className="px-2 py-1.5 pl-3">
+                                                            <div className="flex items-center justify-between mb-0.5">
+                                                                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1">
+                                                                    <Truck size={9} /> 商家发货 (入库)
+                                                                </span>
+                                                            </div>
+                                                            <div className="font-mono text-[11px] text-slate-600 dark:text-slate-300 font-bold tracking-wide group-hover/supplier:text-blue-600 transition-colors truncate">
                                                                 {order.supplierTrackingNumber}
                                                             </div>
-                                                        </div>
+                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <div className="flex items-center gap-1 text-[10px] text-slate-300">
-                                                        <Truck size={10} /> 待商家发货
+                                                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 max-w-[200px]">
+                                                        <Truck size={12} />
+                                                        <span className="text-[10px]">待商家发货</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -989,7 +1040,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
 
                                         {/* Logistics & Status */}
                                         <td className="px-4 py-4 align-top">
-                                            <div className="space-y-2">
+                                            <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
                                                      {getStatusBadge(order)}
                                                      {isTrash && (
@@ -999,28 +1050,51 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                     )}
                                                 </div>
 
+                                                {/* Progress Bar for Active Orders */}
+                                                {!isTrash && order.status !== OrderStatus.CANCELLED && (
+                                                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden flex">
+                                                        <div 
+                                                            className={`h-full rounded-full transition-all duration-500 ${
+                                                                order.status === OrderStatus.DELIVERED ? 'bg-emerald-500' :
+                                                                order.status === OrderStatus.SHIPPED ? 'bg-indigo-500' :
+                                                                'bg-blue-400'
+                                                            }`}
+                                                            style={{ width: `${getProgress(order.status)}%` }}
+                                                        ></div>
+                                                    </div>
+                                                )}
+
                                                 {!isTrash && (
-                                                    <div className="space-y-1">
+                                                    <div className="space-y-2 pt-1">
+                                                        {/* Outbound Tracking Card */}
                                                         {order.trackingNumber ? (
-                                                            <div onClick={(e) => open17Track(order.trackingNumber!, e)} className="group/track cursor-pointer bg-slate-50 dark:bg-slate-800 rounded p-1.5 border border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors">
-                                                                <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-0.5">
-                                                                    <Plane size={10} /> 发货物流 (出库)
-                                                                </div>
-                                                                <div className="font-mono text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1">
-                                                                    {order.trackingNumber}
-                                                                    <ExternalLink size={10} className="opacity-0 group-hover/track:opacity-100 transition-opacity" />
-                                                                </div>
+                                                            <div onClick={(e) => open17Track(order.trackingNumber!, e)} className="group/track cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all shadow-sm">
+                                                                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
+                                                                 <div className="px-3 py-2 pl-4">
+                                                                    <div className="flex items-center justify-between mb-1">
+                                                                        <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1">
+                                                                            <Plane size={10} /> 出库物流
+                                                                        </span>
+                                                                        <ExternalLink size={10} className="text-indigo-400 opacity-0 group-hover/track:opacity-100 transition-opacity" />
+                                                                    </div>
+                                                                    <div className="font-mono text-xs text-slate-700 dark:text-slate-200 font-bold tracking-wide group-hover/track:text-indigo-600 transition-colors">
+                                                                        {order.trackingNumber}
+                                                                    </div>
+                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                             <div className="text-[11px] text-slate-400 italic pl-1">未生成运单号</div>
+                                                             <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-slate-400">
+                                                                <AlertCircle size={12} />
+                                                                <span className="text-[10px]">待生成运单号</span>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 )}
                                                 
-                                                {/* Address Preview */}
-                                                <div className="flex items-start gap-1 text-[11px] text-slate-500 dark:text-slate-400 pl-1" title={order.buyerAddress}>
-                                                    <MapPin size={10} className="mt-0.5 shrink-0" />
-                                                    <span className="line-clamp-1 opacity-80 hover:opacity-100">{order.buyerAddress}</span>
+                                                {/* Address Preview (More compact) */}
+                                                <div className="flex items-start gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded border border-slate-100 dark:border-slate-800/50" title={order.buyerAddress}>
+                                                    <MapPin size={12} className="mt-0.5 shrink-0 text-slate-400" />
+                                                    <span className="line-clamp-1 opacity-90">{order.buyerAddress}</span>
                                                 </div>
                                             </div>
                                         </td>
