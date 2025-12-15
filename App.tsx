@@ -6,7 +6,7 @@ import { OrderList } from './components/OrderList';
 import { OrderForm } from './components/OrderForm';
 import { CustomerList } from './components/CustomerList';
 import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
-import { LayoutDashboard, ShoppingCart, PlusCircle, Settings, Box, Cloud, Loader2, Database, Wifi, WifiOff, Copy, Check, ExternalLink, Truck, ChevronDown, Users, Moon, Sun, Trash2, Recycle, AlertTriangle, Hourglass, Menu, Save, Upload } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, PlusCircle, Settings, Box, Cloud, Loader2, Database, Wifi, WifiOff, Copy, Check, ExternalLink, Truck, ChevronDown, Users, Moon, Sun, Trash2, Recycle, AlertTriangle, Hourglass, Menu, Save, Upload, Code, HelpCircle } from 'lucide-react';
 import { initSupabase, fetchCloudOrders, saveCloudOrder, deleteCloudOrder, fetchCloudCustomers, saveCloudCustomer, deleteCloudCustomer } from './services/supabaseService';
 import { syncOrderLogistics } from './services/logisticsService';
 
@@ -20,6 +20,34 @@ const DEFAULT_WARNING_RULES: WarningRules = {
     impendingBufferHours: 24 // Alert 24h before timeout
 };
 
+// SQL to initialize Supabase
+const INIT_SQL = `
+-- 1. 创建订单表 (Create orders table)
+create table if not exists public.orders (
+  id text primary key,
+  order_data jsonb not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 2. 创建客户表 (Create customers table)
+create table if not exists public.customers (
+  id text primary key,
+  customer_data jsonb not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- 3. 启用 RLS (Enable Row Level Security)
+alter table public.orders enable row level security;
+alter table public.customers enable row level security;
+
+-- 4. 开放读写权限 (Allow public access for Anon Key)
+-- 注意：这是为了演示方便。生产环境建议配合 Auth 使用更严格的策略。
+create policy "Enable all access for orders" on public.orders for all using (true) with check (true);
+create policy "Enable all access for customers" on public.customers for all using (true) with check (true);
+`;
+
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('dashboard');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -31,7 +59,7 @@ const App: React.FC = () => {
   const [isPlatformsOpen, setIsPlatformsOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile Sidebar State
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
-
+  
   // Settings & Cloud State
   const [settings, setSettings] = useState<AppSettings>({
     cloudConfig: { url: '', key: '' },
@@ -45,6 +73,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [showSqlHelp, setShowSqlHelp] = useState(false);
   
   const backupInputRef = useRef<HTMLInputElement>(null);
 
@@ -144,6 +173,11 @@ const App: React.FC = () => {
 
   const connectToCloud = async (config: SupabaseConfig) => {
     setIsLoading(true);
+    // Basic validation
+    if (!config.url.includes('supabase.co')) {
+        showToast("URL 格式看似不正确，应包含 .supabase.co", 'error');
+    }
+
     const success = initSupabase(config);
     if (success) {
       try {
@@ -155,14 +189,26 @@ const App: React.FC = () => {
         setCustomers(cloudCustomers);
         setIsCloudMode(true);
         showToast('云端数据同步成功', 'success');
-      } catch (e) {
+        setShowSettings(false);
+      } catch (e: any) {
         console.error("Failed to connect to cloud", e);
         setIsCloudMode(false);
-        showToast("连接云端失败，已切换至本地模式", 'error');
+        // Better error message
+        let msg = "连接失败";
+        if (e.message?.includes('404') || e.code === '42P01') {
+             msg = "连接失败：找不到数据表。请确保已在 SQL Editor 运行了建表语句。";
+             setShowSqlHelp(true); // Auto show help
+        } else if (e.message?.includes('fetch')) {
+             msg = "网络请求失败，请检查 URL 和 Key 是否正确";
+        } else {
+             msg = `连接失败: ${e.message || '未知错误'}`;
+        }
+        showToast(msg, 'error');
         loadLocalData();
       }
     } else {
       setIsCloudMode(false);
+      showToast("初始化失败，请检查配置格式", 'error');
     }
     setIsLoading(false);
   };
@@ -511,6 +557,11 @@ const App: React.FC = () => {
     navigator.clipboard.writeText(`Project URL: ${settings.cloudConfig.url}\nAnon Key: ${settings.cloudConfig.key}`);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2000);
+  };
+
+  const handleCopySQL = () => {
+    navigator.clipboard.writeText(INIT_SQL);
+    showToast("SQL 语句已复制", 'success');
   };
 
   // --- System Backup & Restore ---
@@ -1041,10 +1092,37 @@ const App: React.FC = () => {
                                         placeholder="Anon Key (eyJh...)"
                                         className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono bg-white dark:bg-slate-800 dark:text-white"
                                     />
+                                    
                                     <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-md text-[10px] text-amber-800 dark:text-amber-200 border border-amber-100 dark:border-amber-900 space-y-2">
-                                        <p><strong>注意：</strong> 首次使用需在 SQL Editor 运行建表语句 (包含 customers 表)。</p>
-                                        <p className="font-bold text-red-600 dark:text-red-400">
-                                            重要提示：连接后，当前的本地数据不会自动上传合并！界面将显示云端数据。请务必在连接前先点击上方的“备份数据”按钮导出本地数据，以免丢失。
+                                        <p className="flex items-center gap-1 font-bold">
+                                            <HelpCircle size={12} /> 
+                                            新手必读：
+                                        </p>
+                                        <p>首次使用 Supabase 必须先在后台运行建表语句 (SQL)，否则无法连接。</p>
+                                        <button 
+                                            onClick={() => setShowSqlHelp(!showSqlHelp)}
+                                            className="text-indigo-600 dark:text-indigo-400 underline font-bold flex items-center gap-1 mt-1 hover:text-indigo-800"
+                                        >
+                                            <Code size={12} /> {showSqlHelp ? '隐藏 SQL' : '查看/复制 建表 SQL'}
+                                        </button>
+                                        
+                                        {showSqlHelp && (
+                                            <div className="mt-2 bg-slate-900 rounded-lg p-2 border border-slate-700 relative group">
+                                                <button 
+                                                    onClick={handleCopySQL}
+                                                    className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 text-white p-1 rounded transition-colors"
+                                                    title="复制 SQL"
+                                                >
+                                                    <Copy size={12} />
+                                                </button>
+                                                <code className="block text-[10px] text-green-400 font-mono whitespace-pre-wrap overflow-x-auto max-h-40 custom-scrollbar">
+                                                    {INIT_SQL}
+                                                </code>
+                                            </div>
+                                        )}
+                                        
+                                        <p className="font-bold text-red-600 dark:text-red-400 mt-2">
+                                            注意：连接后界面将显示云端数据。请先点击上方的“备份数据”按钮导出本地数据。
                                         </p>
                                     </div>
                                     <button 
