@@ -5,10 +5,23 @@ interface Tracking17Result {
   number: string;
   track_info?: {
     latest_status?: {
-      status: string; // "10": InTransit, "20": Expired, "30": InfoReceived, "40": Delivered
+      status: string; // "10": InTransit, "20": Expired, "30": InfoReceived, "40": Delivered, "50": Alert
     };
   };
 }
+
+const map17TrackStatus = (code: string): string => {
+    switch (code) {
+        case '10': return '运输中';
+        case '20': return '运输过久';
+        case '30': return '已揽收';
+        case '35': return '投递失败/待取';
+        case '40': return '已签收';
+        case '50': return '运输异常';
+        case '0': return '查询不到';
+        default: return '未知状态';
+    }
+};
 
 export const syncOrderLogistics = async (orders: Order[], token: string): Promise<{ updatedOrders: Order[], count: number, message: string }> => {
   let updatedCount = 0;
@@ -24,12 +37,14 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
       if (order.trackingNumber && 
          (order.status === OrderStatus.PENDING || order.status === OrderStatus.PURCHASED || order.status === OrderStatus.READY_TO_SHIP)) {
         order.status = OrderStatus.SHIPPED;
+        order.detailedStatus = '已发货 (本地推断)';
         changed = true;
       }
       
       // Heuristic 2: If Supplier Tracking exists and status is PENDING, assume PURCHASED
       else if (order.supplierTrackingNumber && order.status === OrderStatus.PENDING) {
         order.status = OrderStatus.PURCHASED;
+        order.detailedStatus = '已采购 (本地推断)';
         changed = true;
       }
 
@@ -67,7 +82,6 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
     });
 
     if (!response.ok) {
-        // If 401/403, token is wrong
         throw new Error(`API Request Failed: ${response.status}`);
     }
 
@@ -80,20 +94,22 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
 
     activeOrders.forEach(order => {
       let changed = false;
+      let newDetailedStatus = order.detailedStatus;
       
       // Check Customer Tracking Logic
       if (order.trackingNumber) {
         const info = trackResults.find(r => r.number === order.trackingNumber);
         if (info?.track_info?.latest_status) {
-          const statusCode = info.track_info.latest_status.status; // "10", "20", etc.
+          const statusCode = info.track_info.latest_status.status; 
+          newDetailedStatus = map17TrackStatus(statusCode);
           
           // "40" = Delivered
           if (statusCode === '40' && order.status !== OrderStatus.DELIVERED) {
             order.status = OrderStatus.DELIVERED;
             changed = true;
           }
-          // "10" = In Transit, "30" = Info Received -> Shipped
-          else if ((statusCode === '10' || statusCode === '30') && order.status !== OrderStatus.SHIPPED) {
+          // "10" = In Transit, "30" = Info Received, "35" = Pick up, "50" = Alert -> Shipped
+          else if (['10', '20', '30', '35', '50'].includes(statusCode) && order.status !== OrderStatus.SHIPPED) {
              order.status = OrderStatus.SHIPPED;
              changed = true;
           }
@@ -109,14 +125,22 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
             // Supplier Delivered -> Ready to Ship (at Warehouse)
             if (statusCode === '40' && order.status !== OrderStatus.READY_TO_SHIP) {
                 order.status = OrderStatus.READY_TO_SHIP;
+                order.detailedStatus = '商家已送达仓库';
                 changed = true;
             }
             // Supplier In Transit -> Purchased
             else if ((statusCode === '10' || statusCode === '30') && order.status === OrderStatus.PENDING) {
                 order.status = OrderStatus.PURCHASED;
+                order.detailedStatus = '商家已发货';
                 changed = true;
             }
          }
+      }
+      
+      // Update detailed text even if main status didn't change
+      if (order.detailedStatus !== newDetailedStatus) {
+          order.detailedStatus = newDetailedStatus;
+          changed = true;
       }
 
       if (changed) {
@@ -133,7 +157,7 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
 
   } catch (error) {
     console.error("Logistics Sync Error:", error);
-    // Fallback to Heuristic if API fails (e.g. CORS or Bad Key)
-    return syncOrderLogistics(orders, ''); // Call recursive without token to trigger heuristic
+    // Fallback to Heuristic if API fails
+    return syncOrderLogistics(orders, ''); 
   }
 };

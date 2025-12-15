@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Order, SupabaseConfig } from '../types';
+import { Order, Customer, SupabaseConfig } from '../types';
 
 let supabase: SupabaseClient | null = null;
 
@@ -71,6 +71,54 @@ export const deleteCloudOrder = async (id: string) => {
 
   const { error } = await supabase
     .from('orders')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+};
+
+// --- Customers ---
+
+export const fetchCloudCustomers = async (): Promise<Customer[]> => {
+  if (!supabase) return [];
+  
+  const { data, error } = await supabase
+    .from('customers')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Supabase fetch error (customers):", error);
+    throw error;
+  }
+
+  // Map back from JSON storage
+  return data.map((row: any) => ({
+    ...row.customer_data,
+    id: row.id // Ensure ID matches
+  }));
+};
+
+export const saveCloudCustomer = async (customer: Customer) => {
+  if (!supabase) return;
+
+  // Upsert
+  const { error } = await supabase
+    .from('customers')
+    .upsert({ 
+        id: customer.id, 
+        customer_data: customer,
+        updated_at: new Date().toISOString()
+    });
+
+  if (error) throw error;
+};
+
+export const deleteCloudCustomer = async (id: string) => {
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from('customers')
     .delete()
     .eq('id', id);
 
