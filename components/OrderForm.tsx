@@ -425,20 +425,20 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                     </div>
                     </div>
 
-                    {/* Outbound Tracking (Position Swapped with Inbound) */}
+                    {/* TikTok Platform Order ID (Previously Outbound Tracking) */}
                     <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">出库物流单号 (发给客户)</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">TikTok平台单号</label>
                     <input 
                         type="text" 
                         name="trackingNumber" 
                         value={formData.trackingNumber || ''} 
                         onChange={handleChange}
-                        placeholder="填写发往目的地的国际/国内运单号"
+                        placeholder="填写发往目的地的TikTok官方运单号"
                         className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/50 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-mono font-medium shadow-sm"
                     />
                     </div>
                     
-                    {/* Supplier Tracking (Position Swapped with Outbound) */}
+                    {/* Supplier Tracking */}
                     <div>
                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">商家发货单号 (入库跟踪)</label>
                         <input 

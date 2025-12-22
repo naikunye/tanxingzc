@@ -1,23 +1,11 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-const getAiClient = () => {
-  // Safe access for process.env in browser environments
-  const apiKey = (typeof process !== 'undefined' && process.env) 
-    ? process.env.API_KEY 
-    : undefined;
-
-  if (!apiKey) {
-    console.warn("API_KEY is not set in the environment.");
-    return null;
-  }
-  return new GoogleGenAI({ apiKey });
-};
+// Initialize the Google GenAI client following senior engineer guidelines.
+// Always use the process.env.API_KEY directly.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const parseOrderText = async (text: string): Promise<any> => {
-  const ai = getAiClient();
-  if (!ai) throw new Error("API Key missing");
-
   const prompt = `
     You are a smart procurement assistant. Analyze the following Chinese or English text which describes a procurement order.
     Extract the following details:
@@ -36,8 +24,9 @@ export const parseOrderText = async (text: string): Promise<any> => {
   `;
 
   try {
+    // Using gemini-3-flash-preview for text parsing tasks as recommended.
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: {
         parts: [
            { text: prompt },
@@ -61,6 +50,7 @@ export const parseOrderText = async (text: string): Promise<any> => {
       }
     });
     
+    // Accessing .text as a property, not a method.
     if (response.text) {
         return JSON.parse(response.text);
     }
@@ -72,9 +62,6 @@ export const parseOrderText = async (text: string): Promise<any> => {
 };
 
 export const parseOrderImage = async (base64Image: string): Promise<any> => {
-    const ai = getAiClient();
-    if (!ai) throw new Error("API Key missing");
-
     // Remove header if present (e.g., "data:image/png;base64,")
     const base64Data = base64Image.split(',')[1] || base64Image;
 
@@ -91,14 +78,15 @@ export const parseOrderImage = async (base64Image: string): Promise<any> => {
     `;
 
     try {
+        // gemini-3-flash-preview is highly efficient for vision-to-text JSON extraction.
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash", // Flash supports vision
+            model: "gemini-3-flash-preview",
             contents: {
                 parts: [
                     { text: prompt },
                     { 
                         inlineData: {
-                            mimeType: "image/jpeg", // Assuming generic image type, API is flexible
+                            mimeType: "image/jpeg",
                             data: base64Data
                         }
                     }
@@ -132,9 +120,6 @@ export const parseOrderImage = async (base64Image: string): Promise<any> => {
 };
 
 export const generateStatusUpdate = async (order: any): Promise<string> => {
-    const ai = getAiClient();
-    if (!ai) return "Error: API Key missing";
-
     const prompt = `
       Create a polite notification message in Chinese to the customer about their order status.
       
@@ -150,7 +135,7 @@ export const generateStatusUpdate = async (order: any): Promise<string> => {
 
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-3-flash-preview",
             contents: prompt
         });
         return response.text || "Could not generate message.";
@@ -161,9 +146,6 @@ export const generateStatusUpdate = async (order: any): Promise<string> => {
 };
 
 export const parseNaturalLanguageSearch = async (query: string): Promise<any> => {
-  const ai = getAiClient();
-  if (!ai) throw new Error("API Key missing");
-
   const prompt = `
     You are a data query parser. Convert this natural language search query for a procurement order system into a JSON filter object.
     
@@ -198,7 +180,7 @@ export const parseNaturalLanguageSearch = async (query: string): Promise<any> =>
 
   try {
      const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
