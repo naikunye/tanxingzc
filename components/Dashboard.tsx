@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   BarChart, 
@@ -13,7 +12,7 @@ import {
   Cell,
   Label
 } from 'recharts';
-import { Order, OrderStatus, OrderStatusCN, WarningRules } from '../types';
+import { Order, OrderStatus, OrderStatusCN, WarningRules } from '../types.ts';
 import { DollarSign, Clock, AlertTriangle, Hourglass, CheckCircle2, Plane, AlertCircle, Warehouse, ShoppingCart, Archive, Home, Truck, ShoppingBag } from 'lucide-react';
 
 interface DashboardProps {
@@ -422,7 +421,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                 ) : (
                     warningList.map(order => {
                         const isOverdue = order.health.status === 'overdue';
-                        const themeColor = isOverdue ? 'red' : 'orange';
                         const bgColor = isOverdue ? 'bg-red-50 dark:bg-red-900/10' : 'bg-orange-50 dark:bg-orange-900/10';
                         const borderColor = isOverdue ? 'border-red-100 dark:border-red-900/30' : 'border-orange-100 dark:border-orange-900/30';
                         const textColor = isOverdue ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400';

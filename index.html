@@ -6,8 +6,10 @@
     <title>探行科技智能采集管理平台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      // 为浏览器环境注入 process.env 垫片，防止 SDK 初始化失败
-      window.process = { env: { API_KEY: "" } };
+      // 必须在所有模块加载前注入，确保 process.env 存在
+      window.process = window.process || {};
+      window.process.env = window.process.env || {};
+      window.process.env.API_KEY = window.process.env.API_KEY || "";
 
       tailwind.config = {
         darkMode: 'class',
@@ -27,13 +29,11 @@
         background-color: #f8fafc; /* Slate-50 */
         color: #0f172a; /* Slate-900 */
       }
-      /* Ensure body background matches theme when dark class is present */
       .dark body {
         background-color: #020617; /* Slate-950 */
         color: #f1f5f9; /* Slate-100 */
       }
       
-      /* Custom scrollbar */
       ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
