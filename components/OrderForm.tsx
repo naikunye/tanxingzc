@@ -427,7 +427,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
 
                     {/* Outbound Tracking (Position Swapped with Inbound) */}
                     <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">出库物流单号 (发给客户)</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">TIKTOK平台单号</label>
                     <input 
                         type="text" 
                         name="trackingNumber" 

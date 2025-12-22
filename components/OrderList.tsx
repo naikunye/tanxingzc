@@ -157,7 +157,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
       const headers = [
         "订单ID", "客户单号", "商品名称", "数量", "金额(USD)", "总价(USD)", 
         "状态", "详细物流状态", "采购日期", "平台", "平台订单号", 
-        "收货地址", "出库物流单号", "入库物流单号", "备注"
+        "收货地址", "TIKTOK平台单号", "入库物流单号", "备注"
       ];
       const rows = exportList.map(o => [
         o.id,
@@ -217,7 +217,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
     const headers = [
         "订单ID", "客户单号", "商品名称", "数量", "金额(USD)", "总价(USD)", 
         "状态", "详细物流状态", "采购日期", "平台", "平台订单号", 
-        "收货地址", "出库物流单号", "入库物流单号", "备注"
+        "收货地址", "TIKTOK平台单号", "入库物流单号", "备注"
     ];
 
     const rows = filteredOrders.map(o => [
@@ -286,7 +286,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                   id: row['订单ID'] || row['Order ID'] || row['id'],
                   clientOrderId: row['客户单号'] || row['Client Order ID'] || row['clientOrderId'],
                   platformOrderId: row['平台订单号'] || row['Platform Order ID'] || row['platformOrderId'],
-                  trackingNumber: row['出库物流单号'] || row['发货物流单号'] || row['Tracking Number'] || row['trackingNumber'],
+                  trackingNumber: row['TIKTOK平台单号'] || row['出库物流单号'] || row['发货物流单号'] || row['Tracking Number'] || row['trackingNumber'],
                   supplierTrackingNumber: row['入库物流单号'] || row['商家物流单号'] || row['Supplier Tracking'] || row['supplierTrackingNumber']
               }));
               onBatchLogisticsUpdate(updates);
@@ -949,7 +949,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                         </button>
                                     </th>
                                     <th className="px-4 py-3 font-semibold w-[30%]">商品信息 / 客户单号</th>
-                                    <th className="px-4 py-3 font-semibold w-[25%]">出库物流 / 状态</th>
+                                    <th className="px-4 py-3 font-semibold w-[25%]">TIKTOK平台单号 / 状态</th>
                                     <th className="px-4 py-3 font-semibold w-[25%]">采购来源 / 商家发货</th>
                                     <th className="px-4 py-3 font-semibold w-[15%]">备注</th>
                                     <th className="px-4 py-3 font-semibold text-right">操作</th>
@@ -975,7 +975,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             <div className="flex gap-3">
                                                 <div className="w-16 h-16 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
                                                     {order.imageUrl ? (
-                                                        <img src={order.imageUrl} className="w-full h-full object-cover" />
+                                                        <img src={order.imageUrl} alt={order.itemName} className="w-full h-full object-cover" />
                                                     ) : (
                                                         <Package size={20} className="text-slate-400" />
                                                     )}
@@ -1028,14 +1028,14 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
 
                                                 {!isTrash && (
                                                     <div className="space-y-2 pt-1">
-                                                        {/* Outbound Tracking Card */}
+                                                        {/* TIKTOK Platform Tracking Card */}
                                                         {order.trackingNumber ? (
                                                             <div onClick={(e) => open17Track(order.trackingNumber!, e)} className="group/track cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all shadow-sm">
                                                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
                                                                  <div className="px-3 py-2 pl-4">
                                                                     <div className="flex items-center justify-between mb-1">
                                                                         <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1">
-                                                                            <Plane size={10} /> 出库物流
+                                                                            <Plane size={10} /> TIKTOK平台单号
                                                                         </span>
                                                                         <ExternalLink size={10} className="text-indigo-400 opacity-0 group-hover/track:opacity-100 transition-opacity" />
                                                                     </div>
@@ -1047,7 +1047,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                         ) : (
                                                              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-slate-400">
                                                                 <AlertCircle size={12} />
-                                                                <span className="text-[10px]">待生成运单号</span>
+                                                                <span className="text-[10px]">待生成TIKTOK单号</span>
                                                             </div>
                                                         )}
                                                     </div>

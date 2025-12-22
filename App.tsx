@@ -402,7 +402,7 @@ const App: React.FC = () => {
               platform: row['平台'] || row['platform'] || '',
               platformOrderId: row['平台订单号'] || row['platformOrderId'] || '',
               clientOrderId: row['客户单号'] || row['clientOrderId'] || '',
-              trackingNumber: row['出库物流单号'] || row['发货物流单号'] || row['trackingNumber'] || '',
+              trackingNumber: row['TIKTOK平台单号'] || row['出库物流单号'] || row['发货物流单号'] || row['trackingNumber'] || '',
               supplierTrackingNumber: row['入库物流单号'] || row['采购物流单号'] || row['supplierTrackingNumber'] || '',
               notes: row['备注'] || row['notes'] || '',
               status: status,
