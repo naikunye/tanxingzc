@@ -2,10 +2,22 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 // Initialize the Google GenAI client following senior engineer guidelines.
-// Always use the process.env.API_KEY directly.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Safely handle cases where API_KEY might be undefined during initial load.
+const getApiKey = () => {
+    try {
+        return process.env.API_KEY || '';
+    } catch (e) {
+        return '';
+    }
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 export const parseOrderText = async (text: string): Promise<any> => {
+  if (!getApiKey()) {
+      console.warn("Gemini API Key is missing. Parsing will fail.");
+  }
+
   const prompt = `
     You are a smart procurement assistant. Analyze the following Chinese or English text which describes a procurement order.
     Extract the following details:
@@ -18,13 +30,9 @@ export const parseOrderText = async (text: string): Promise<any> => {
     - clientOrderId: The client's reference number or internal order ID if mentioned (e.g. "客户单号: ABC-123").
     
     If a field is missing, make a reasonable guess based on context or leave it null.
-    
-    Example Input: "客户单号 ORD-2024-001，帮我买5个iPhone 15手机壳，发到深圳市...，亚马逊买，订单号是 112-3333333-4444444"
-    Example Output JSON: {"itemName": "iPhone 15手机壳", "quantity": 5, "priceUSD": 0, "buyerAddress": "...", "platform": "Amazon", "platformOrderId": "112-3333333-4444444", "clientOrderId": "ORD-2024-001"}
   `;
 
   try {
-    // Using gemini-3-flash-preview for text parsing tasks as recommended.
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: {
@@ -50,7 +58,6 @@ export const parseOrderText = async (text: string): Promise<any> => {
       }
     });
     
-    // Accessing .text as a property, not a method.
     if (response.text) {
         return JSON.parse(response.text);
     }
@@ -62,7 +69,6 @@ export const parseOrderText = async (text: string): Promise<any> => {
 };
 
 export const parseOrderImage = async (base64Image: string): Promise<any> => {
-    // Remove header if present (e.g., "data:image/png;base64,")
     const base64Data = base64Image.split(',')[1] || base64Image;
 
     const prompt = `
@@ -70,15 +76,14 @@ export const parseOrderImage = async (base64Image: string): Promise<any> => {
       Extract the order details into JSON format.
       - itemName: Product name.
       - quantity: Quantity.
-      - priceUSD: Price in USD (if symbol is ¥/RMB, convert approx or keep number).
+      - priceUSD: Price in USD.
       - buyerAddress: Address if visible.
-      - platform: Platform name (Amazon, eBay, etc) if recognizable.
-      - platformOrderId: Order ID if visible.
-      - clientOrderId: Client/Customer Order ID if visible.
+      - platform: Platform name.
+      - platformOrderId: Order ID.
+      - clientOrderId: Client/Customer Order ID.
     `;
 
     try {
-        // gemini-3-flash-preview is highly efficient for vision-to-text JSON extraction.
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: {
@@ -122,15 +127,8 @@ export const parseOrderImage = async (base64Image: string): Promise<any> => {
 export const generateStatusUpdate = async (order: any): Promise<string> => {
     const prompt = `
       Create a polite notification message in Chinese to the customer about their order status.
-      
-      Order Details:
-      Item: ${order.itemName}
-      Current Status: ${order.status}
-      Tracking Number: ${order.trackingNumber || 'Not available yet'}
-      Order Ref: ${order.clientOrderId || ''}
-      
-      The tone should be professional and reassuring.
-      Only return the message content.
+      Item: ${order.itemName}, Status: ${order.status}, Order Ref: ${order.clientOrderId || 'N/A'}.
+      Professional tone.
     `;
 
     try {
@@ -138,44 +136,17 @@ export const generateStatusUpdate = async (order: any): Promise<string> => {
             model: "gemini-3-flash-preview",
             contents: prompt
         });
-        return response.text || "Could not generate message.";
+        return response.text || "无法生成消息。";
     } catch (e) {
-        console.error(e);
-        return "Error generating message.";
+        return "消息生成错误。";
     }
 };
 
 export const parseNaturalLanguageSearch = async (query: string): Promise<any> => {
   const prompt = `
-    You are a data query parser. Convert this natural language search query for a procurement order system into a JSON filter object.
-    
+    Convert this natural language search query for orders into a JSON filter object.
     Current Date: ${new Date().toISOString().split('T')[0]}
-    
-    Input Query: "${query}"
-
-    Instructions:
-    1. Dates: Convert relative dates (e.g., "last week", "上周", "三天前") to ISO YYYY-MM-DD strings for startDate/endDate.
-    2. Platforms: Identify e-commerce platforms (Amazon, Ali, Taobao, 1688, etc.).
-    3. Status Mapping (CRITICAL):
-       - "Pending", "代采购", "没买" -> 'Pending'
-       - "Purchased", "已采购", "买了", "未发货" -> 'Purchased'
-       - "Ready to Ship", "待发货", "入库", "到仓库" -> 'Ready to Ship'
-       - "Shipped", "已发货", "路上", "运输中" -> 'Shipped'
-       - "Delivered", "已签收", "到了" -> 'Delivered'
-       - "Cancelled", "取消", "不要了" -> 'Cancelled'
-       - "Delayed", "超时", "晚了", "异常" -> 'delayed'
-    4. Keywords: Anything else (product name, address, order ID) goes to 'keyword'.
-    
-    Output JSON Schema:
-    {
-       startDate: string | null,
-       endDate: string | null,
-       platform: string | null,
-       status: 'Pending' | 'Purchased' | 'Ready to Ship' | 'Shipped' | 'Delivered' | 'Cancelled' | 'delayed' | null,
-       minPrice: number | null,
-       maxPrice: number | null,
-       keyword: string | null
-    }
+    Query: "${query}"
   `;
 
   try {
@@ -191,8 +162,6 @@ export const parseNaturalLanguageSearch = async (query: string): Promise<any> =>
             endDate: { type: Type.STRING, nullable: true },
             platform: { type: Type.STRING, nullable: true },
             status: { type: Type.STRING, nullable: true },
-            minPrice: { type: Type.NUMBER, nullable: true },
-            maxPrice: { type: Type.NUMBER, nullable: true },
             keyword: { type: Type.STRING, nullable: true },
           }
         }
@@ -204,7 +173,6 @@ export const parseNaturalLanguageSearch = async (query: string): Promise<any> =>
     }
     return null;
   } catch (error) {
-      console.error("Gemini Search Parse Error", error);
       return null;
   }
 };
