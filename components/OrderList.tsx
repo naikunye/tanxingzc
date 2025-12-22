@@ -157,7 +157,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
       const headers = [
         "订单ID", "客户单号", "商品名称", "数量", "金额(USD)", "总价(USD)", 
         "状态", "详细物流状态", "采购日期", "平台", "平台订单号", 
-        "收货地址", "采购物流单号", "平台发货单号", "备注"
+        "收货地址", "出库物流单号", "入库物流单号", "备注"
       ];
       const rows = exportList.map(o => [
         o.id,
@@ -217,7 +217,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
     const headers = [
         "订单ID", "客户单号", "商品名称", "数量", "金额(USD)", "总价(USD)", 
         "状态", "详细物流状态", "采购日期", "平台", "平台订单号", 
-        "收货地址", "采购物流单号", "平台发货单号", "备注"
+        "收货地址", "出库物流单号", "入库物流单号", "备注"
     ];
 
     const rows = filteredOrders.map(o => [
@@ -286,8 +286,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                   id: row['订单ID'] || row['Order ID'] || row['id'],
                   clientOrderId: row['客户单号'] || row['Client Order ID'] || row['clientOrderId'],
                   platformOrderId: row['平台订单号'] || row['Platform Order ID'] || row['platformOrderId'],
-                  trackingNumber: row['发货物流单号'] || row['Tracking Number'] || row['trackingNumber'],
-                  supplierTrackingNumber: row['商家物流单号'] || row['Supplier Tracking'] || row['supplierTrackingNumber']
+                  trackingNumber: row['出库物流单号'] || row['发货物流单号'] || row['Tracking Number'] || row['trackingNumber'],
+                  supplierTrackingNumber: row['入库物流单号'] || row['商家物流单号'] || row['Supplier Tracking'] || row['supplierTrackingNumber']
               }));
               onBatchLogisticsUpdate(updates);
           } catch (error) {
@@ -554,7 +554,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             )}
                                          </div>
                                          <div className="min-w-0">
-                                             <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight mb-1">{order.itemName}</h4>
+                                             <h4 className="text-sm font-bold text-slate-800 dark:text-white line-clamp-2 leading-tight mb-1">{order.itemName}</h4>
                                              <p className="text-xs text-slate-500 dark:text-slate-400">${order.priceUSD} x {order.quantity}</p>
                                          </div>
                                     </div>
