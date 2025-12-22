@@ -47,6 +47,15 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
   const [hasNotesFilter, setHasNotesFilter] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // Calculate the number of active filters for the UI badge
+  const activeFilterCount = [
+    filter !== 'All',
+    platformFilter !== 'All',
+    !!dateRange.start,
+    !!dateRange.end,
+    hasNotesFilter
+  ].filter(Boolean).length;
+
   const platforms = Array.from(new Set(orders.map(o => o.platform || '其他').filter(Boolean))).sort();
 
   const getDelayType = (order: Order): 'purchase' | 'shipping' | null => {
@@ -103,20 +112,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
 
   const clearSelection = () => setSelectedIds(new Set());
 
-  const handleBatchDeleteAction = () => {
-      if (onBatchDelete && selectedIds.size > 0) {
-          onBatchDelete(Array.from(selectedIds));
-          clearSelection();
-      }
-  };
-
-  const handleBatchStatusAction = (status: OrderStatus) => {
-      if (onBatchStatusChange && selectedIds.size > 0) {
-          onBatchStatusChange(Array.from(selectedIds), status);
-          clearSelection();
-      }
-  };
-
   const handleBatchExportAction = () => {
       const exportList = filteredOrders.filter(o => selectedIds.has(o.id));
       if (exportList.length === 0) return;
@@ -133,16 +128,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
       document.body.removeChild(link);
       clearSelection();
   };
-
-  const clearFilters = () => {
-      setSearchTerm('');
-      setDateRange({ start: '', end: '' });
-      setPlatformFilter('All');
-      setHasNotesFilter(false);
-      if (filter === 'delayed') setFilter('All');
-  };
-
-  const activeFilterCount = [dateRange.start, dateRange.end, platformFilter !== 'All', hasNotesFilter, filter === 'delayed'].filter(Boolean).length;
 
   const handleExport = () => {
     const headers = ["订单ID", "采购内部单号", "商品名称", "数量", "金额(USD)", "总价(USD)", "状态", "详细物流状态", "采购日期", "平台", "平台采购跟踪号", "收货地址", "平台单号（tiktok）", "商家自发货单号", "备注"];
@@ -275,15 +260,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
   const handleRestore = (id: string, e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); if (onRestore) onRestore(id); }
   const open17Track = (num: string, e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); window.open(`https://t.17track.net/zh-cn#nums=${num}`, '_blank'); };
 
-  const getDaysLeft = (deletedAt?: string) => {
-      if (!deletedAt) return 14;
-      const delDate = new Date(deletedAt);
-      const expiryDate = new Date(delDate.getTime() + 14 * 24 * 60 * 60 * 1000);
-      const now = new Date();
-      const diffTime = expiryDate.getTime() - now.getTime();
-      return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-  };
-
   return (
     <div className="space-y-6 animate-fade-in pb-20 relative">
       <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileChange} />
@@ -310,7 +286,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                         {onImport && (
                             <div className="flex bg-slate-50 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
                                 <button onClick={handleImportClick} className="px-3 py-1.5 text-slate-600 dark:text-slate-300 rounded-md text-xs font-bold hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all flex items-center gap-2"><Upload size={14} /><span>导入订单</span></button>
-                                {onBatchLogisticsUpdate && <button onClick={handleLogisticsImportClick} className="px-3 py-1.5 text-indigo-600 dark:text-indigo-400 rounded-md text-xs font-bold hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all flex items-center gap-2" title="批量更新物流单号"><Truck size={14} /><span>发货/更新</span></button>}
+                                {onBatchLogisticsUpdate && <button onClick={handleImportClick} className="px-3 py-1.5 text-indigo-600 dark:text-indigo-400 rounded-md text-xs font-bold hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all flex items-center gap-2" title="批量更新物流单号"><Truck size={14} /><span>发货/更新</span></button>}
                             </div>
                         )}
                         <button onClick={handleExport} className="px-3 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-2 border border-emerald-200 dark:border-emerald-800"><Download size={16} /><span className="hidden sm:inline">导出表格</span></button>
@@ -340,9 +316,9 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                     <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
                         <tr>
                             <th className="px-4 py-4 w-12 text-center"><button onClick={toggleSelectAll} className="flex items-center justify-center">{selectedIds.size > 0 && selectedIds.size === filteredOrders.length ? <CheckSquare size={18} className="text-indigo-600"/> : <Square size={18} />}</button></th>
-                            <th className="px-4 py-3 font-semibold w-[25%]">商品信息 / 采购内部单号</th>
+                            <th className="px-4 py-3 font-semibold w-[25%]">商品信息 / 平台单号 (TikTok)</th>
                             <th className="px-4 py-3 font-semibold w-[25%]">商家自发货 / 状态</th>
-                            <th className="px-4 py-3 font-semibold w-[25%]">采购来源 / 平台采购跟踪号</th>
+                            <th className="px-4 py-3 font-semibold w-[25%]">采购来源 / 内部单号 / 跟踪号</th>
                             <th className="px-4 py-3 font-semibold w-[15%]">备注</th>
                             <th className="px-4 py-3 font-semibold text-right">操作</th>
                         </tr>
@@ -357,7 +333,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                         <div className="min-w-0 flex-1">
                                             <div className="font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight">{order.itemName}</div>
                                             <div className="text-xs text-slate-500 mt-1">${(order.priceUSD * order.quantity).toFixed(2)} (${order.priceUSD} x {order.quantity})</div>
-                                            {order.clientOrderId && <div className="mt-1.5 flex items-center gap-1 text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded w-fit font-mono">{order.clientOrderId}</div>}
+                                            {order.platformOrderId && <div className="mt-1.5 flex items-center gap-1 text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded w-fit font-mono" title="平台单号 (TikTok)">#{order.platformOrderId}</div>}
                                         </div>
                                     </div>
                                 </td>
@@ -378,7 +354,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-2">
                                             <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600">{order.platform}</span>
-                                            {order.platformOrderId && <span className="text-[10px] font-mono text-slate-500" title="平台单号 (tiktok)">#{order.platformOrderId}</span>}
+                                            {order.clientOrderId && <span className="text-[10px] font-mono text-indigo-600 font-bold" title="采购内部单号">{order.clientOrderId}</span>}
                                         </div>
                                         {order.trackingNumber ? (
                                             <div onClick={(e) => open17Track(order.trackingNumber!, e)} className="p-2 border rounded-lg bg-white hover:border-blue-400 transition-all cursor-pointer">
