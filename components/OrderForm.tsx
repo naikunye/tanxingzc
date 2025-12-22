@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, OrderStatusCN, Customer } from '../types';
 import { parseOrderText, parseOrderImage } from '../services/geminiService';
-import { Wand2, Save, X, Loader2, UploadCloud, FileText, ChevronRight, Truck, ShoppingCart, Image as ImageIcon, Users } from 'lucide-react';
+import { Wand2, Save, X, Loader2, UploadCloud, FileText, ChevronRight, Truck, ShoppingCart, ImageIcon, Users } from 'lucide-react';
 
 interface OrderFormProps {
   initialOrder?: Order | null;
@@ -425,28 +424,28 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                     </div>
                     </div>
 
-                    {/* Outbound Tracking (Position Swapped with Inbound) */}
+                    {/* Tiktok ID label confirmed */}
                     <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">出库物流单号 (发给客户)</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">平台订单号 (tiktok)</label>
                     <input 
                         type="text" 
                         name="trackingNumber" 
                         value={formData.trackingNumber || ''} 
                         onChange={handleChange}
-                        placeholder="填写发往目的地的国际/国内运单号"
+                        placeholder="填写TikTok平台的订单标识单号"
                         className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/50 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-mono font-medium shadow-sm"
                     />
                     </div>
                     
-                    {/* Supplier Tracking (Position Swapped with Outbound) */}
+                    {/* Updated label as per request */}
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">商家发货单号 (入库跟踪)</label>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">商家自发货单号</label>
                         <input 
                             type="text" 
                             name="supplierTrackingNumber" 
                             value={formData.supplierTrackingNumber || ''} 
                             onChange={handleChange}
-                            placeholder="填写供应商发往中转仓库的单号"
+                            placeholder="填写供应商发往中转仓库的物流单号"
                             className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/50 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-mono font-medium shadow-sm"
                         />
                     </div>

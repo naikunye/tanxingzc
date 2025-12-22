@@ -1,4 +1,3 @@
-
 import { Order, OrderStatus } from '../types';
 
 interface Tracking17Result {
@@ -33,16 +32,8 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
     activeOrders.forEach(order => {
       let changed = false;
       
-      // Heuristic 1: If Customer Tracking exists and status is < SHIPPED, assume SHIPPED
-      if (order.trackingNumber && 
-         (order.status === OrderStatus.PENDING || order.status === OrderStatus.PURCHASED || order.status === OrderStatus.READY_TO_SHIP)) {
-        order.status = OrderStatus.SHIPPED;
-        order.detailedStatus = '已发货 (本地推断)';
-        changed = true;
-      }
-      
-      // Heuristic 2: If Supplier Tracking exists and status is PENDING, assume PURCHASED
-      else if (order.supplierTrackingNumber && order.status === OrderStatus.PENDING) {
+      // Heuristic: If Supplier Tracking exists and status is PENDING, assume PURCHASED
+      if (order.supplierTrackingNumber && order.status === OrderStatus.PENDING) {
         order.status = OrderStatus.PURCHASED;
         order.detailedStatus = '已采购 (本地推断)';
         changed = true;
@@ -57,18 +48,19 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
     return { 
       updatedOrders: newOrders, 
       count: updatedCount, 
-      message: updatedCount > 0 ? `已通过本地智能检查更新了 ${updatedCount} 个订单状态` : '没有检测到可更新的状态 (配置 API Key 可获取真实轨迹)'
+      message: updatedCount > 0 ? `已通过本地智能检查更新了 ${updatedCount} 个订单状态` : '没有检测到可更新的状态'
     };
   }
 
   // API Mode
   try {
+    // Only track supplierTrackingNumber. tiktok platform ID (trackingNumber) is now treated as static.
     const payload = activeOrders
-      .filter(o => o.trackingNumber || o.supplierTrackingNumber)
-      .map(o => ({ number: o.trackingNumber || o.supplierTrackingNumber }));
+      .filter(o => !!o.supplierTrackingNumber)
+      .map(o => ({ number: o.supplierTrackingNumber }));
 
     if (payload.length === 0) {
-      return { updatedOrders: newOrders, count: 0, message: '没有发现带有单号的活跃订单' };
+      return { updatedOrders: newOrders, count: 0, message: '没有发现带有商家发货单号的活跃订单' };
     }
 
     // 17TRACK API endpoint (V2.2 GetTrackInfo)
@@ -94,34 +86,19 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
 
     activeOrders.forEach(order => {
       let changed = false;
-      let newDetailedStatus = order.detailedStatus;
       
-      // Check Customer Tracking Logic
-      if (order.trackingNumber) {
-        const info = trackResults.find(r => r.number === order.trackingNumber);
-        if (info?.track_info?.latest_status) {
-          const statusCode = info.track_info.latest_status.status; 
-          newDetailedStatus = map17TrackStatus(statusCode);
-          
-          // "40" = Delivered
-          if (statusCode === '40' && order.status !== OrderStatus.DELIVERED) {
-            order.status = OrderStatus.DELIVERED;
-            changed = true;
-          }
-          // "10" = In Transit, "30" = Info Received, "35" = Pick up, "50" = Alert -> Shipped
-          else if (['10', '20', '30', '35', '50'].includes(statusCode) && order.status !== OrderStatus.SHIPPED) {
-             order.status = OrderStatus.SHIPPED;
-             changed = true;
-          }
-        }
-      } 
-      
-      // Check Supplier Tracking Logic (Only if Customer Tracking didn't already complete the order)
-      if (!changed && order.supplierTrackingNumber && order.status !== OrderStatus.DELIVERED && order.status !== OrderStatus.SHIPPED) {
+      // Check Supplier Tracking Logic
+      if (order.supplierTrackingNumber && order.status !== OrderStatus.DELIVERED && order.status !== OrderStatus.SHIPPED) {
          const info = trackResults.find(r => r.number === order.supplierTrackingNumber);
          if (info?.track_info?.latest_status) {
             const statusCode = info.track_info.latest_status.status;
+            const newDetail = map17TrackStatus(statusCode);
             
+            if (order.detailedStatus !== newDetail) {
+                order.detailedStatus = newDetail;
+                changed = true;
+            }
+
             // Supplier Delivered -> Ready to Ship (at Warehouse)
             if (statusCode === '40' && order.status !== OrderStatus.READY_TO_SHIP) {
                 order.status = OrderStatus.READY_TO_SHIP;
@@ -136,12 +113,6 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
             }
          }
       }
-      
-      // Update detailed text even if main status didn't change
-      if (order.detailedStatus !== newDetailedStatus) {
-          order.detailedStatus = newDetailedStatus;
-          changed = true;
-      }
 
       if (changed) {
         order.lastUpdated = new Date().toISOString();
@@ -152,7 +123,7 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
     return { 
         updatedOrders: newOrders, 
         count: updatedCount, 
-        message: `同步成功！已更新 ${updatedCount} 个订单的物流状态` 
+        message: `同步成功！已更新 ${updatedCount} 个订单的商家发货进度` 
     };
 
   } catch (error) {
