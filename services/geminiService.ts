@@ -1,7 +1,15 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Strictly follow initialization rules for environment variables
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// 确保在访问前 process 对象存在，防止打包后的代码在浏览器运行报错
+const getApiKey = () => {
+  try {
+    return process.env.API_KEY || "";
+  } catch (e) {
+    return "";
+  }
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 export const parseOrderText = async (text: string): Promise<any> => {
   const prompt = `
