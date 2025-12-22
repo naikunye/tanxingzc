@@ -1,23 +1,9 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
-const getAiClient = () => {
-  // Safe access for process.env in browser environments
-  const apiKey = (typeof process !== 'undefined' && process.env) 
-    ? process.env.API_KEY 
-    : undefined;
-
-  if (!apiKey) {
-    console.warn("API_KEY is not set in the environment.");
-    return null;
-  }
-  return new GoogleGenAI({ apiKey });
-};
+// Fix: Always use named parameter for apiKey and obtain directly from process.env.API_KEY
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const parseOrderText = async (text: string): Promise<any> => {
-  const ai = getAiClient();
-  if (!ai) throw new Error("API Key missing");
-
   const prompt = `
     You are a smart procurement assistant. Analyze the following Chinese or English text which describes a procurement order.
     Extract the following details:
@@ -36,8 +22,9 @@ export const parseOrderText = async (text: string): Promise<any> => {
   `;
 
   try {
+    // Fix: Use gemini-3-pro-preview for complex reasoning/extraction tasks
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: 'gemini-3-pro-preview',
       contents: {
         parts: [
            { text: prompt },
@@ -72,9 +59,6 @@ export const parseOrderText = async (text: string): Promise<any> => {
 };
 
 export const parseOrderImage = async (base64Image: string): Promise<any> => {
-    const ai = getAiClient();
-    if (!ai) throw new Error("API Key missing");
-
     // Remove header if present (e.g., "data:image/png;base64,")
     const base64Data = base64Image.split(',')[1] || base64Image;
 
@@ -91,14 +75,15 @@ export const parseOrderImage = async (base64Image: string): Promise<any> => {
     `;
 
     try {
+        // Fix: Use gemini-3-flash-preview for high-performance multimodal understanding
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash", // Flash supports vision
+            model: 'gemini-3-flash-preview',
             contents: {
                 parts: [
                     { text: prompt },
                     { 
                         inlineData: {
-                            mimeType: "image/jpeg", // Assuming generic image type, API is flexible
+                            mimeType: "image/jpeg", 
                             data: base64Data
                         }
                     }
@@ -132,9 +117,6 @@ export const parseOrderImage = async (base64Image: string): Promise<any> => {
 };
 
 export const generateStatusUpdate = async (order: any): Promise<string> => {
-    const ai = getAiClient();
-    if (!ai) return "Error: API Key missing";
-
     const prompt = `
       Create a polite notification message in Chinese to the customer about their order status.
       
@@ -149,8 +131,9 @@ export const generateStatusUpdate = async (order: any): Promise<string> => {
     `;
 
     try {
+        // Fix: Use gemini-3-flash-preview for basic text generation tasks
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: 'gemini-3-flash-preview',
             contents: prompt
         });
         return response.text || "Could not generate message.";
@@ -161,9 +144,6 @@ export const generateStatusUpdate = async (order: any): Promise<string> => {
 };
 
 export const parseNaturalLanguageSearch = async (query: string): Promise<any> => {
-  const ai = getAiClient();
-  if (!ai) throw new Error("API Key missing");
-
   const prompt = `
     You are a data query parser. Convert this natural language search query for a procurement order system into a JSON filter object.
     
@@ -197,8 +177,9 @@ export const parseNaturalLanguageSearch = async (query: string): Promise<any> =>
   `;
 
   try {
+     // Fix: Use gemini-3-pro-preview for advanced reasoning and parsing tasks
      const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: 'gemini-3-pro-preview',
       contents: prompt,
       config: {
         responseMimeType: "application/json",
