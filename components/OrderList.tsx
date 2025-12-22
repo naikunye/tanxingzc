@@ -120,8 +120,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
   const handleBatchExportAction = () => {
       const exportList = filteredOrders.filter(o => selectedIds.has(o.id));
       if (exportList.length === 0) return;
-      const headers = ["订单ID", "采购内部单号", "商品名称", "数量", "金额(USD)", "总价(USD)", "状态", "详细物流状态", "采购日期", "平台", "平台采购跟踪号", "收货地址", "平台订单号 (tiktok)", "商家自发货单号", "备注"];
-      const rows = exportList.map(o => [o.id, `"${o.clientOrderId || ''}"`, `"${o.itemName.replace(/"/g, '""')}"`, o.quantity, o.priceUSD, (o.priceUSD * o.quantity).toFixed(2), OrderStatusCN[o.status], o.detailedStatus || '', o.purchaseDate, o.platform, `"${o.platformOrderId || ''}"`, `"${o.buyerAddress.replace(/"/g, '""').replace(/\n/g, ' ')}"`, `"${o.trackingNumber || ''}"`, `"${o.supplierTrackingNumber || ''}"`, `"${o.notes || ''}"`]);
+      const headers = ["订单ID", "采购内部单号", "商品名称", "数量", "金额(USD)", "总价(USD)", "状态", "详细物流状态", "采购日期", "平台", "平台采购跟踪号", "收货地址", "平台单号（tiktok）", "商家自发货单号", "备注"];
+      const rows = exportList.map(o => [o.id, `"${o.clientOrderId || ''}"`, `"${o.itemName.replace(/"/g, '""')}"`, o.quantity, o.priceUSD, (o.priceUSD * o.quantity).toFixed(2), OrderStatusCN[o.status], o.detailedStatus || '', o.purchaseDate, o.platform, `"${o.trackingNumber || ''}"`, `"${o.buyerAddress.replace(/"/g, '""').replace(/\n/g, ' ')}"`, `"${o.platformOrderId || ''}"`, `"${o.supplierTrackingNumber || ''}"`, `"${o.notes || ''}"`]);
       const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -145,8 +145,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
   const activeFilterCount = [dateRange.start, dateRange.end, platformFilter !== 'All', hasNotesFilter, filter === 'delayed'].filter(Boolean).length;
 
   const handleExport = () => {
-    const headers = ["订单ID", "采购内部单号", "商品名称", "数量", "金额(USD)", "总价(USD)", "状态", "详细物流状态", "采购日期", "平台", "平台采购跟踪号", "收货地址", "平台订单号 (tiktok)", "商家自发货单号", "备注"];
-    const rows = filteredOrders.map(o => [o.id, `"${o.clientOrderId || ''}"`, `"${o.itemName.replace(/"/g, '""')}"`, o.quantity, o.priceUSD, (o.priceUSD * o.quantity).toFixed(2), OrderStatusCN[o.status], o.detailedStatus || '', o.purchaseDate, o.platform, `"${o.platformOrderId || ''}"`, `"${o.buyerAddress.replace(/"/g, '""').replace(/\n/g, ' ')}"`, `"${o.trackingNumber || ''}"`, `"${o.supplierTrackingNumber || ''}"`, `"${o.notes || ''}"`]);
+    const headers = ["订单ID", "采购内部单号", "商品名称", "数量", "金额(USD)", "总价(USD)", "状态", "详细物流状态", "采购日期", "平台", "平台采购跟踪号", "收货地址", "平台单号（tiktok）", "商家自发货单号", "备注"];
+    const rows = filteredOrders.map(o => [o.id, `"${o.clientOrderId || ''}"`, `"${o.itemName.replace(/"/g, '""')}"`, o.quantity, o.priceUSD, (o.priceUSD * o.quantity).toFixed(2), OrderStatusCN[o.status], o.detailedStatus || '', o.purchaseDate, o.platform, `"${o.trackingNumber || ''}"`, `"${o.buyerAddress.replace(/"/g, '""').replace(/\n/g, ' ')}"`, `"${o.platformOrderId || ''}"`, `"${o.supplierTrackingNumber || ''}"`, `"${o.notes || ''}"`]);
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -192,8 +192,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
               const updates = data.map(row => ({
                   id: row['订单ID'] || row['Order ID'] || row['id'],
                   clientOrderId: row['采购内部单号'] || row['客户单号'] || row['Client Order ID'] || row['clientOrderId'],
-                  platformOrderId: row['平台采购跟踪号'] || row['平台订单号'] || row['Platform Order ID'] || row['platformOrderId'],
-                  trackingNumber: row['平台订单号 (tiktok)'] || row['出库物流单号'] || row['发货物流单号'] || row['trackingNumber'],
+                  platformOrderId: row['平台单号（tiktok）'] || row['采购平台单号'] || row['平台单号'] || row['Platform Order ID'] || row['platformOrderId'],
+                  trackingNumber: row['平台采购跟踪号'] || row['出库物流单号'] || row['发货物流单号'] || row['trackingNumber'],
                   supplierTrackingNumber: row['商家自发货单号'] || row['入库物流单号'] || row['商家物流单号'] || row['supplierTrackingNumber']
               }));
               onBatchLogisticsUpdate(updates);
@@ -378,12 +378,12 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-2">
                                             <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600">{order.platform}</span>
-                                            {order.platformOrderId && <span className="text-[10px] font-mono text-slate-500">#{order.platformOrderId}</span>}
+                                            {order.trackingNumber && <span className="text-[10px] font-mono text-slate-500">{order.trackingNumber}</span>}
                                         </div>
-                                        {order.trackingNumber && (
+                                        {order.platformOrderId && (
                                             <div className="p-2 border rounded-lg bg-white">
-                                                <div className="text-[9px] text-slate-400 font-bold uppercase">平台采购跟踪号</div>
-                                                <div className="font-mono text-[10px] text-slate-600 truncate">{order.trackingNumber}</div>
+                                                <div className="text-[9px] text-slate-400 font-bold uppercase">平台单号（tiktok）</div>
+                                                <div className="font-mono text-[10px] text-slate-600 truncate">#{order.platformOrderId}</div>
                                             </div>
                                         )}
                                     </div>

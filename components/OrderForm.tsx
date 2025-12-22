@@ -148,7 +148,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div><label className="block text-sm font-bold mb-2">采购平台</label><input type="text" name="platform" value={formData.platform} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg" /></div>
-                            <div><label className="block text-sm font-bold mb-2">采购平台单号</label><input type="text" name="platformOrderId" value={formData.platformOrderId} onChange={handleChange} placeholder="商家提供的订单ID" className="w-full px-4 py-2 border rounded-lg font-mono" /></div>
+                            <div><label className="block text-sm font-bold mb-2">平台采购跟踪号</label><input type="text" name="trackingNumber" value={formData.trackingNumber} onChange={handleChange} placeholder="采购平台物流面单" className="w-full px-4 py-2 border rounded-lg font-mono" /></div>
                         </div>
                         <div><label className="block text-sm font-bold mb-2">采购内部单号</label><input type="text" name="clientOrderId" value={formData.clientOrderId} onChange={handleChange} placeholder="您的内部参考单号" className="w-full px-4 py-2 border rounded-lg font-mono" /></div>
                         <div><label className="block text-sm font-bold mb-2">备注</label><input type="text" name="notes" value={formData.notes} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg" /></div>
@@ -162,7 +162,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                             <div><label className="block text-sm font-bold mb-2">采购日期</label><input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg" /></div>
                         </div>
                         <div><label className="block text-sm font-bold mb-2">商家自发货单号</label><input type="text" name="supplierTrackingNumber" value={formData.supplierTrackingNumber} onChange={handleChange} placeholder="商家自发货物流面单" className="w-full px-4 py-2 border rounded-lg font-mono" /></div>
-                        <div><label className="block text-sm font-bold mb-2">平台采购跟踪号</label><input type="text" name="trackingNumber" value={formData.trackingNumber} onChange={handleChange} placeholder="TikTok/平台侧的跟踪号" className="w-full px-4 py-2 border rounded-lg font-mono" /></div>
+                        <div><label className="block text-sm font-bold mb-2">平台单号（tiktok）</label><input type="text" name="platformOrderId" value={formData.platformOrderId} onChange={handleChange} placeholder="tiktok订单ID" className="w-full px-4 py-2 border rounded-lg font-mono" /></div>
                     </div>
                 </div>
                 <div className="flex justify-end gap-4 border-t pt-8">

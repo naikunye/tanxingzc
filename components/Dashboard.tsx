@@ -43,6 +43,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
   const ONE_DAY = ONE_HOUR * 24;
 
   const getOrderHealth = (order: Order): { status: HealthStatus, msg: string, timeLeftHours: number } => {
+      // 1. Check Purchase Health
       if (order.status === OrderStatus.PURCHASED) {
           const purchaseTime = new Date(order.purchaseDate).getTime();
           const elapsedHours = (now - purchaseTime) / ONE_HOUR;
@@ -55,7 +56,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
           }
       }
 
+      // 2. Check Shipping Health
       if (order.status === OrderStatus.SHIPPED) {
+          // Fallback to purchaseDate if lastUpdated is missing (though it shouldn't be for shipped items)
           const refTime = new Date(order.lastUpdated || order.purchaseDate).getTime();
           const elapsedDays = (now - refTime) / ONE_DAY;
           const limitDays = warningRules.shippingTimeoutDays;
@@ -63,6 +66,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
           if (elapsedDays > limitDays) {
               return { status: 'overdue', msg: `物流超时 ${Math.floor(elapsedDays - limitDays)}天`, timeLeftHours: 0 };
           } else if (elapsedDays > (limitDays - (warningRules.impendingBufferHours / 24))) {
+              // Convert buffer hours to days for comparison
               return { status: 'impending', msg: `即将超时 (未签收)`, timeLeftHours: 0 };
           }
       }
@@ -70,9 +74,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
       return { status: 'normal', msg: '正常', timeLeftHours: 0 };
   };
 
+  // Group Orders by Warning Status
   const warningList = orders.map(o => ({ ...o, health: getOrderHealth(o) }))
                             .filter(o => o.health.status !== 'normal')
                             .sort((a, b) => {
+                                // Sort Order: Overdue first, then Impending. Within category, worst first.
                                 if (a.health.status !== b.health.status) {
                                     return a.health.status === 'overdue' ? -1 : 1;
                                 }
@@ -94,6 +100,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
     value: orders.filter(o => o.status === status).length
   })).filter(d => d.value > 0);
 
+  // Platform Data Calculation (Top 8)
   const platformCounts: Record<string, number> = {};
   orders.forEach(o => {
       const p = o.platform || '其他';
@@ -105,22 +112,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
       value: platformCounts[key]
   })).sort((a, b) => b.value - a.value).slice(0, 8);
 
+  // --- New Logic for Split Logistics Flows ---
+
+  // 1. Inbound Flow (Procurement -> Warehouse)
   const inboundData = {
       toBuy: orders.filter(o => o.status === OrderStatus.PENDING).length,
       purchased: orders.filter(o => o.status === OrderStatus.PURCHASED && !o.supplierTrackingNumber).length,
       supplierTransit: orders.filter(o => 
+          // Has supplier tracking but not yet arrived (Ready to Ship)
           (o.status === OrderStatus.PURCHASED || o.status === OrderStatus.PENDING) && !!o.supplierTrackingNumber
       ).length,
       arrived: orders.filter(o => o.status === OrderStatus.READY_TO_SHIP).length
   };
 
+  // 2. Outbound Flow (Warehouse -> Customer)
   const outboundData = {
-      ready: orders.filter(o => o.status === OrderStatus.READY_TO_SHIP).length,
+      ready: orders.filter(o => o.status === OrderStatus.READY_TO_SHIP).length, // Shared node (End of Inbound, Start of Outbound)
       inTransit: orders.filter(o => o.status === OrderStatus.SHIPPED && (!o.detailedStatus || ['运输中', '已发货', '已揽收'].includes(o.detailedStatus))).length,
       deliveryIssue: orders.filter(o => o.status === OrderStatus.SHIPPED && ['投递失败/待取', '到达待取', '运输异常', '运输过久'].includes(o.detailedStatus || '')).length,
       delivered: orders.filter(o => o.status === OrderStatus.DELIVERED).length
   };
 
+  // Custom Tooltip Component
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -154,7 +167,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
       <div 
         onClick={onClick}
         className={`bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-start space-x-4 transition-all duration-300 group min-w-0 relative ring-offset-white dark:ring-offset-slate-900
-            ${onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.02] hover:border-indigo-200 dark:hover:border-slate-700 active:scale-95' : ''}
+            ${onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.02] hover:border-indigo-200 dark:hover:border-slate-700' : ''}
             ${warningClass}
         `}
       >
@@ -164,7 +177,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                 <span className={`relative inline-flex rounded-full h-3 w-3 ${isWarning ? 'bg-red-500' : 'bg-orange-500'}`}></span>
             </span>
           )}
-          <div className={`p-3 rounded-lg ${currentTheme.bg} transition-transform duration-300 shrink-0 ${onClick ? 'group-hover:scale-110' : ''}`}>
+          <div className={`p-3 rounded-lg ${currentTheme.bg} ${(!isWarning && !isImpending) && 'group-hover:scale-110'} transition-transform duration-300 shrink-0`}>
             <Icon size={24} className={currentTheme.text} />
           </div>
           <div className="min-w-0">
@@ -176,28 +189,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
     );
   };
 
+  // Reusable Flow Component
   const LogisticsFlow = ({ title, steps, colorClass, lineColor }: { title: string, steps: any[], colorClass: string, lineColor: string }) => (
       <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
         <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-6 uppercase tracking-wider flex items-center gap-2">
-            {steps[0].icon}
+            {steps[0].icon} {/* Use first icon as header icon */}
             {title}
         </h3>
         <div className="relative flex justify-between items-start pt-2 px-2">
+            {/* Connecting Line */}
             <div className="absolute top-5 left-0 w-full h-0.5 bg-slate-100 dark:bg-slate-800 -z-0">
                  <div className={`h-full ${lineColor} opacity-20 w-full`}></div>
             </div>
 
             {steps.map((step, idx) => (
-                <div 
-                    key={idx} 
-                    className={`flex flex-col items-center relative z-10 flex-1 group transition-all duration-200 ${onNavigate ? 'cursor-pointer' : ''}`}
-                    onClick={() => onNavigate && onNavigate(step.targetStatus || OrderStatus.PENDING)}
-                >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white dark:border-slate-900 shadow-sm transition-transform group-hover:scale-125 group-active:scale-95 ${step.count > 0 ? colorClass : 'bg-slate-200 dark:bg-slate-800 text-slate-400'}`}>
+                <div key={idx} className="flex flex-col items-center relative z-10 flex-1">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white dark:border-slate-900 shadow-sm transition-transform hover:scale-110 ${step.count > 0 ? colorClass : 'bg-slate-200 dark:bg-slate-800 text-slate-400'}`}>
                         {React.cloneElement(step.icon, { size: 16 })}
                     </div>
                     <div className="mt-3 text-center">
-                        <div className={`text-xl font-bold transition-colors ${step.count > 0 ? 'text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400' : 'text-slate-400 dark:text-slate-600'}`}>
+                        <div className={`text-xl font-bold ${step.count > 0 ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-600'}`}>
                             {step.count}
                         </div>
                         <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-tight">{step.label}</div>
@@ -267,10 +278,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                 colorClass="bg-blue-500 text-white"
                 lineColor="bg-blue-500"
                 steps={[
-                    { label: '待采购', count: inboundData.toBuy, icon: <ShoppingCart />, targetStatus: OrderStatus.PENDING },
-                    { label: '待商家发', count: inboundData.purchased, icon: <Clock />, targetStatus: OrderStatus.PURCHASED },
-                    { label: '商家在途', count: inboundData.supplierTransit, icon: <Truck />, targetStatus: OrderStatus.PURCHASED },
-                    { label: '已入库', count: inboundData.arrived, icon: <Warehouse />, targetStatus: OrderStatus.READY_TO_SHIP }
+                    { label: '待采购', count: inboundData.toBuy, icon: <ShoppingCart /> },
+                    { label: '待商家发', count: inboundData.purchased, icon: <Clock /> },
+                    { label: '商家在途', count: inboundData.supplierTransit, icon: <Truck /> },
+                    { label: '已入库', count: inboundData.arrived, icon: <Warehouse /> }
                 ]}
             />
 
@@ -280,10 +291,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                 colorClass="bg-emerald-500 text-white"
                 lineColor="bg-emerald-500"
                 steps={[
-                    { label: '待出库', count: outboundData.ready, icon: <Archive />, targetStatus: OrderStatus.READY_TO_SHIP },
-                    { label: '国际运输', count: outboundData.inTransit, icon: <Plane />, targetStatus: OrderStatus.SHIPPED },
-                    { label: '异常/待取', count: outboundData.deliveryIssue, icon: <AlertCircle />, targetStatus: OrderStatus.SHIPPED },
-                    { label: '客户签收', count: outboundData.delivered, icon: <Home />, targetStatus: OrderStatus.DELIVERED }
+                    { label: '待出库', count: outboundData.ready, icon: <Archive /> },
+                    { label: '国际运输', count: outboundData.inTransit, icon: <Plane /> },
+                    { label: '异常/待取', count: outboundData.deliveryIssue, icon: <AlertCircle /> },
+                    { label: '客户签收', count: outboundData.delivered, icon: <Home /> }
                 ]}
             />
 
@@ -416,7 +427,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
 
                         return (
                             <div key={order.id} 
-                                className={`p-4 rounded-lg border transition-all cursor-pointer group ${bgColor} ${borderColor} hover:opacity-90 active:scale-95`}
+                                className={`p-4 rounded-lg border transition-colors cursor-pointer group ${bgColor} ${borderColor} hover:opacity-90`}
                                 onClick={() => onNavigate && onNavigate('delayed')}
                             >
                                 <div className="flex justify-between items-start mb-2">
