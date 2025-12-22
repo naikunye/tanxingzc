@@ -382,7 +382,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                         </div>
                                         {order.trackingNumber && (
                                             <div className="p-2 border rounded-lg bg-white">
-                                                <div className="text-[9px] text-slate-400 font-bold uppercase">Tiktok 订单标识</div>
+                                                <div className="text-[9px] text-slate-400 font-bold uppercase">平台采购跟踪号</div>
                                                 <div className="font-mono text-[10px] text-slate-600 truncate">{order.trackingNumber}</div>
                                             </div>
                                         )}
