@@ -149,11 +149,9 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
   };
 
   const handleBatchExportAction = () => {
-      // Create a temporary filtered list based on selection
       const exportList = filteredOrders.filter(o => selectedIds.has(o.id));
       if (exportList.length === 0) return;
       
-      // Reuse export logic but with selected items
       const headers = [
         "订单ID", "客户单号", "商品名称", "数量", "金额(USD)", "总价(USD)", 
         "状态", "详细物流状态", "采购日期", "平台", "平台订单号", 
@@ -201,7 +199,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
       dateRange.end, 
       platformFilter !== 'All', 
       hasNotesFilter,
-      filter === 'delayed' // Treat delayed mode as an active filter
+      filter === 'delayed'
   ].filter(Boolean).length;
 
 
@@ -213,7 +211,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
   };
 
   const handleExport = () => {
-    // Standard Export (All Filtered)
     const headers = [
         "订单ID", "客户单号", "商品名称", "数量", "金额(USD)", "总价(USD)", 
         "状态", "详细物流状态", "采购日期", "平台", "平台订单号", 
@@ -281,7 +278,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
       if (file && onBatchLogisticsUpdate) {
           try {
               const data = await parseCSV(file);
-              // Normalize data keys (Order ID/Client ID -> id, Tracking -> trackingNumber)
               const updates = data.map(row => ({
                   id: row['订单ID'] || row['Order ID'] || row['id'],
                   clientOrderId: row['客户单号'] || row['Client Order ID'] || row['clientOrderId'],
@@ -301,7 +297,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
       if (e.key === 'Enter' && searchTerm.trim()) {
           setIsAiThinking(true);
           try {
-              // 1. Reset Filters first to allow new clean search
               setDateRange({ start: '', end: '' });
               setPlatformFilter('All');
               setHasNotesFilter(false);
@@ -309,7 +304,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
 
               const criteria = await parseNaturalLanguageSearch(searchTerm);
               if (criteria) {
-                  // 2. Apply filters based on AI criteria
                   if (criteria.startDate || criteria.endDate) {
                       setDateRange({ start: criteria.startDate || '', end: criteria.endDate || '' });
                   }
@@ -320,17 +314,16 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                       if (criteria.status === 'delayed') {
                         setFilter('delayed');
                       } else {
-                           // Try to match the enum directly
                            const statusEnum = Object.values(OrderStatus).find(s => s === criteria.status);
-                           if (statusEnum) setFilter(statusEnum);
+                           if (statusEnum) setFilter(statusEnum as OrderStatus);
                       }
                   }
                   if (criteria.keyword) {
                       setSearchTerm(criteria.keyword);
                   } else {
-                      setSearchTerm(''); // Clear raw query if converted entirely to filters
+                      setSearchTerm('');
                   }
-                  setShowFilters(true); // Auto expand to show what AI selected
+                  setShowFilters(true);
               }
           } finally {
               setIsAiThinking(false);
@@ -385,7 +378,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                     {OrderStatusCN[status]}
                 </span>
                 
-                {/* Warning Icons */}
                 {delayType === 'purchase' && (
                     <div className="relative group/warn">
                          <span className="w-5 h-5 rounded-full bg-red-100 text-red-500 border border-red-200 flex items-center justify-center animate-pulse">
@@ -408,7 +400,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                 )}
             </div>
             
-            {/* Detailed Status Text */}
             {order.detailedStatus && (
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium px-0.5" title={order.detailedStatus}>
                     <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
@@ -453,7 +444,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
     window.open(`https://t.17track.net/zh-cn#nums=${trackingNumber}`, '_blank');
   };
 
-  // ... (renderTimeline, handleDragStart etc can remain, but won't be used in table view often)
    const renderTimeline = (currentStatus: OrderStatus) => {
       if (currentStatus === OrderStatus.CANCELLED) return null;
       const currentIndex = TIMELINE_STEPS.indexOf(currentStatus);
@@ -492,7 +482,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
       );
   };
 
-  // --- Board View Logic ---
   const handleDragStart = (e: React.DragEvent, id: string) => {
       e.dataTransfer.setData("orderId", id);
       e.dataTransfer.effectAllowed = "move";
@@ -524,12 +513,10 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, status)}
                     >
-                        {/* Column Header */}
                         <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800 rounded-t-xl sticky top-0 z-10">
                             <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">{OrderStatusCN[status]}</h3>
                             <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full text-xs font-bold">{columnOrders.length}</span>
                         </div>
-                        {/* Content ... (Same as before) */}
                          <div className="p-2 overflow-y-auto flex-1 custom-scrollbar space-y-2">
                             {columnOrders.map(order => (
                                 <div 
@@ -544,7 +531,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             <AlertTriangle size={14} />
                                         </div>
                                     )}
-                                    {/* ... Card Content (Simplified for brevity) ... */}
                                      <div className="flex gap-3 mb-2">
                                          <div className="w-12 h-12 rounded bg-slate-50 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 shrink-0 overflow-hidden">
                                             {order.imageUrl ? (
@@ -599,12 +585,9 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
           onChange={handleLogisticsFileChange} 
       />
 
-      {/* Controls Container */}
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-          {/* Top Bar: Search and Primary Actions */}
           <div className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-2 w-full md:w-auto flex-1">
-                {/* Smart Search Input Area */}
                 <div className={`relative w-full md:max-w-lg group transition-all duration-300 ${isSmartSearch ? 'scale-[1.01]' : ''}`}>
                     <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2 z-10">
                         <button 
@@ -666,7 +649,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                     </span>
                 ) : (
                     <>
-                        {/* Standard View Actions */}
                         {onImport && (
                             <div className="flex bg-slate-50 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
                                 <button
@@ -729,7 +711,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
             </div>
           </div>
 
-          {/* Advanced Filter Panel */}
           {showFilters && !isTrash && (
             <div className="bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 p-4 animate-fade-in">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
@@ -787,7 +768,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
           )}
       </div>
       
-      {/* Filter Tabs */}
       {!isTrash && viewMode !== 'board' && (
         <div className="flex overflow-x-auto pb-2 gap-2 scrollbar-hide">
              {['All', ...Object.values(OrderStatus)].map((s: any) => (
@@ -803,7 +783,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                     {s === 'All' ? '全部订单' : OrderStatusCN[s as OrderStatus]}
                 </button>
              ))}
-             {/* Dynamic Tab for Delayed */}
              {filter === 'delayed' && (
                  <button
                     onClick={() => setFilter('delayed')}
@@ -816,7 +795,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
         </div>
       )}
 
-      {/* Batch Actions */}
       {selectedIds.size > 0 && (
           <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-6 animate-fade-in border border-slate-700 w-[90%] md:w-auto">
               <div className="flex items-center gap-3 pr-4 border-r border-slate-700">
@@ -875,7 +853,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
           </div>
       )}
 
-      {/* Main List Rendering */}
       {viewMode === 'board' && !isTrash ? (
           renderKanbanBoard()
       ) : filteredOrders.length === 0 ? (
@@ -889,7 +866,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
       ) : (
         <>
             {viewMode === 'grid' && !isTrash ? (
-                // GRID VIEW (Only for active orders)
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {filteredOrders.map(order => (
                         <div 
@@ -920,10 +896,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                 </div>
                             </div>
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
-                                {/* ... Same Content as previous Grid View ... */}
                                 <div>
                                      <h3 className="text-lg font-bold text-slate-900 dark:text-white truncate pr-4">{order.itemName}</h3>
-                                     {/* ... details ... */}
                                      <div className="text-xl font-bold text-slate-900 dark:text-white mt-2">${(order.priceUSD * order.quantity).toFixed(2)}</div>
                                 </div>
                                 {renderTimeline(order.status)}
@@ -937,14 +911,12 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                     ))}
                 </div>
             ) : (
-                // TABLE VIEW (Used for both Active and Trash)
                 <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
                             <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
                                 <tr>
                                     <th className="px-4 py-4 w-12 text-center">
-                                        {/* Fix: Added missing onClick attribute name and opening brace for toggleSelectAll */}
                                         <button onClick={toggleSelectAll} className="flex items-center justify-center text-slate-400 hover:text-indigo-600">
                                             {selectedIds.size > 0 && selectedIds.size === filteredOrders.length ? <CheckSquare size={18} className="text-indigo-600"/> : <Square size={18} />}
                                         </button>
@@ -971,7 +943,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             </button>
                                         </td>
                                         
-                                        {/* Product & Client ID */}
                                         <td className="px-4 py-4 align-top">
                                             <div className="flex gap-3">
                                                 <div className="w-16 h-16 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 overflow-hidden relative">
@@ -1001,7 +972,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             </div>
                                         </td>
 
-                                        {/* Logistics & Status (Renamed to TikTok Platform Order ID) */}
                                         <td className="px-4 py-4 align-top">
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
@@ -1013,7 +983,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                     )}
                                                 </div>
 
-                                                {/* Progress Bar for Active Orders */}
                                                 {!isTrash && order.status !== OrderStatus.CANCELLED && (
                                                     <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden flex">
                                                         <div 
@@ -1029,7 +998,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
 
                                                 {!isTrash && (
                                                     <div className="space-y-2 pt-1">
-                                                        {/* TikTok Platform Tracking Card */}
                                                         {order.trackingNumber ? (
                                                             <div onClick={(e) => open17Track(order.trackingNumber!, e)} className="group/track cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all shadow-sm">
                                                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
@@ -1054,7 +1022,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                     </div>
                                                 )}
                                                 
-                                                {/* Address Preview (More compact) */}
                                                 <div className="flex items-start gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded border border-slate-100 dark:border-slate-800/50" title={order.buyerAddress}>
                                                     <MapPin size={12} className="mt-0.5 shrink-0 text-slate-400" />
                                                     <span className="line-clamp-1 opacity-90">{order.buyerAddress}</span>
@@ -1062,7 +1029,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             </div>
                                         </td>
 
-                                        {/* Procurement Source */}
                                         <td className="px-4 py-4 align-top">
                                             <div className="space-y-3">
                                                 <div className="flex flex-wrap items-center gap-2">
@@ -1076,7 +1042,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                     )}
                                                 </div>
 
-                                                {/* Inbound Tracking Card */}
                                                 {order.supplierTrackingNumber ? (
                                                     <div onClick={(e) => open17Track(order.supplierTrackingNumber!, e)} className="group/supplier cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all shadow-sm max-w-[200px]">
                                                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
@@ -1100,7 +1065,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             </div>
                                         </td>
 
-                                        {/* Notes */}
                                         <td className="px-4 py-4 align-top">
                                             {order.notes ? (
                                                 <div className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-300 bg-amber-50 dark:bg-amber-900/10 p-2 rounded border border-amber-100 dark:border-amber-900/30">
@@ -1112,7 +1076,6 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             )}
                                         </td>
 
-                                        {/* Actions */}
                                         <td className="px-4 py-4 text-right align-top pt-6 cursor-default" onClick={(e) => e.stopPropagation()}>
                                              <div className="flex items-center justify-end gap-1">
                                                 {isTrash ? (
