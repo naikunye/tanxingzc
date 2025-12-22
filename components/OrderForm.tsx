@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Order, OrderStatus, OrderStatusCN, Customer } from '../types';
-import { parseOrderText, parseOrderImage } from '../services/geminiService';
-import { Wand2, Save, X, Loader2, UploadCloud, FileText, ChevronRight, Truck, ShoppingCart, ImageIcon, Users } from 'lucide-react';
+import { Order, OrderStatus, OrderStatusCN, Customer } from '../types.ts';
+import { parseOrderText, parseOrderImage } from '../services/geminiService.ts';
+import { Wand2, Save, X, Loader2, UploadCloud, FileText, ChevronRight, Truck, ShoppingCart, Image as ImageIcon, Users } from 'lucide-react';
 
 interface OrderFormProps {
   initialOrder?: Order | null;
@@ -298,8 +298,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                                 <option value="Taobao">Taobao</option>
                             </datalist>
                         </div>
+                        {/* 平台采购跟踪号互换至此 */}
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">平台订单号 (采购单号)</label>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">平台采购跟踪号</label>
                             <input 
                                 type="text" 
                                 name="platformOrderId" 
@@ -311,20 +312,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                         </div>
                     </div>
 
-                    {/* Order ID Input Below Platform Section */}
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">客户内部单号 (Client Order ID)</label>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">采购内部单号</label>
                         <input 
                             type="text" 
                             name="clientOrderId" 
                             value={formData.clientOrderId || ''} 
                             onChange={handleChange}
-                            placeholder="如: ORD-2024-001"
+                            placeholder="如: CG-2024-001"
                             className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/50 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-mono font-medium shadow-sm"
                         />
                     </div>
 
-                    {/* Note Input (Moved from Right Column) */}
                     <div>
                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">内部备注</label>
                         <input 
@@ -424,20 +423,19 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                     </div>
                     </div>
 
-                    {/* Tiktok ID label confirmed */}
+                    {/* 平台订单号 (tiktok) 互换至此 */}
                     <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">平台订单号 (tiktok)</label>
-                    <input 
-                        type="text" 
-                        name="trackingNumber" 
-                        value={formData.trackingNumber || ''} 
-                        onChange={handleChange}
-                        placeholder="填写TikTok平台的订单标识单号"
-                        className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/50 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-mono font-medium shadow-sm"
-                    />
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">平台订单号 (tiktok)</label>
+                        <input 
+                            type="text" 
+                            name="trackingNumber" 
+                            value={formData.trackingNumber || ''} 
+                            onChange={handleChange}
+                            placeholder="填写TikTok平台的订单标识单号"
+                            className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/50 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-mono font-medium shadow-sm"
+                        />
                     </div>
                     
-                    {/* Updated label as per request */}
                     <div>
                         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">商家自发货单号</label>
                         <input 
@@ -445,7 +443,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                             name="supplierTrackingNumber" 
                             value={formData.supplierTrackingNumber || ''} 
                             onChange={handleChange}
-                            placeholder="填写供应商发往中转仓库的物流单号"
+                            placeholder="商家自发货物流面单"
                             className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/50 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-mono font-medium shadow-sm"
                         />
                     </div>

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
   <head>
@@ -7,6 +6,9 @@
     <title>探行科技智能采集管理平台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+      // 为浏览器环境注入 process.env 垫片，防止 SDK 初始化失败
+      window.process = { env: { API_KEY: "" } };
+
       tailwind.config = {
         darkMode: 'class',
         theme: {

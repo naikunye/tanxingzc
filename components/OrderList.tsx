@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Order, OrderStatus, OrderStatusCN, TIMELINE_STEPS, WarningRules } from '../types';
+import { Order, OrderStatus, OrderStatusCN, TIMELINE_STEPS, WarningRules } from '../types.ts';
 import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag, CloudLightning, AlertTriangle, Columns, Download, Copy, CheckCircle2, StickyNote, Hash, Filter, Calendar, Tag, XCircle, CheckSquare, Square, X, RotateCcw, Plane, Upload, Brain, Sparkles, Wand2, Clock, AlertCircle, Hourglass } from 'lucide-react';
-import { generateStatusUpdate, parseNaturalLanguageSearch } from '../services/geminiService';
-import { parseCSV } from '../services/csvService';
+import { generateStatusUpdate, parseNaturalLanguageSearch } from '../services/geminiService.ts';
+import { parseCSV } from '../services/csvService.ts';
 
 interface OrderListProps {
   orders: Order[];
@@ -154,8 +154,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
       
       // Reuse export logic but with selected items
       const headers = [
-        "订单ID", "客户单号", "商品名称", "数量", "金额(USD)", "总价(USD)", 
-        "状态", "详细物流状态", "采购日期", "平台", "平台订单号", 
+        "订单ID", "采购内部单号", "商品名称", "数量", "金额(USD)", "总价(USD)", 
+        "状态", "详细物流状态", "采购日期", "平台", "平台采购跟踪号", 
         "收货地址", "平台订单号 (tiktok)", "商家自发货单号", "备注"
       ];
       const rows = exportList.map(o => [
@@ -214,8 +214,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
   const handleExport = () => {
     // Standard Export (All Filtered)
     const headers = [
-        "订单ID", "客户单号", "商品名称", "数量", "金额(USD)", "总价(USD)", 
-        "状态", "详细物流状态", "采购日期", "平台", "平台订单号", 
+        "订单ID", "采购内部单号", "商品名称", "数量", "金额(USD)", "总价(USD)", 
+        "状态", "详细物流状态", "采购日期", "平台", "平台采购跟踪号", 
         "收货地址", "平台订单号 (tiktok)", "商家自发货单号", "备注"
     ];
 
@@ -283,8 +283,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
               // Normalize data keys (Order ID/Client ID -> id, Tracking -> trackingNumber)
               const updates = data.map(row => ({
                   id: row['订单ID'] || row['Order ID'] || row['id'],
-                  clientOrderId: row['客户单号'] || row['Client Order ID'] || row['clientOrderId'],
-                  platformOrderId: row['平台订单号'] || row['Platform Order ID'] || row['platformOrderId'],
+                  clientOrderId: row['采购内部单号'] || row['客户单号'] || row['Client Order ID'] || row['clientOrderId'],
+                  platformOrderId: row['平台采购跟踪号'] || row['平台订单号'] || row['Platform Order ID'] || row['platformOrderId'],
                   trackingNumber: row['平台订单号 (tiktok)'] || row['出库物流单号'] || row['发货物流单号'] || row['Tracking Number'] || row['trackingNumber'],
                   supplierTrackingNumber: row['商家自发货单号'] || row['入库物流单号'] || row['商家物流单号'] || row['Supplier Tracking'] || row['supplierTrackingNumber']
               }));
@@ -615,7 +615,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                             <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
                                 <tr>
                                     <th className="px-4 py-4 w-12 text-center"><button onClick={toggleSelectAll} className="flex items-center justify-center text-slate-400 hover:text-indigo-600">{selectedIds.size > 0 && selectedIds.size === filteredOrders.length ? <CheckSquare size={18} className="text-indigo-600"/> : <Square size={18} />}</button></th>
-                                    <th className="px-4 py-3 font-semibold w-[30%]">商品信息 / 客户单号</th>
+                                    <th className="px-4 py-3 font-semibold w-[30%]">商品信息 / 采购内部单号</th>
                                     <th className="px-4 py-3 font-semibold w-[25%]">平台订单号 (tiktok) / 状态</th>
                                     <th className="px-4 py-3 font-semibold w-[25%]">采购来源 / 商家自发货</th>
                                     <th className="px-4 py-3 font-semibold w-[15%]">备注</th>
@@ -645,7 +645,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                 <div className="flex items-start gap-1.5 text-[10px] text-slate-500 bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded border border-slate-100 dark:border-slate-800/50 truncate" title={order.buyerAddress}><MapPin size={12} className="mt-0.5 shrink-0 text-slate-400" />{order.buyerAddress}</div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-4 align-top"><div className="space-y-3"><div className="flex flex-wrap items-center gap-2"><span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">{order.platform}</span>{order.platformOrderId && <span className="text-[11px] font-mono text-slate-500">#{order.platformOrderId}</span>}</div>{order.supplierTrackingNumber ? <div onClick={(e) => open17Track(order.supplierTrackingNumber!, e)} className="group/supplier cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-300 transition-all shadow-sm max-w-[200px]"><div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div><div className="px-2 py-1.5 pl-3"><div className="flex items-center justify-between mb-0.5"><span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1"><Truck size={9} /> 商家自发货</span><ExternalLink size={9} className="text-blue-400 opacity-0 group-hover/supplier:opacity-100 transition-opacity" /></div><div className="font-mono text-[11px] text-slate-600 dark:text-slate-300 font-bold tracking-wide group-hover/supplier:text-blue-600 transition-colors truncate">{order.supplierTrackingNumber}</div></div></div> : <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 text-[10px]"><Truck size={12} />待商家自发货</div>}</div></td>
+                                        <td className="px-4 py-4 align-top"><div className="space-y-3"><div className="flex flex-wrap items-center gap-2"><span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">{order.platform}</span>{order.platformOrderId && <span className="text-[11px] font-mono text-slate-500" title="平台采购跟踪号">#{order.platformOrderId}</span>}</div>{order.supplierTrackingNumber ? <div onClick={(e) => open17Track(order.supplierTrackingNumber!, e)} className="group/supplier cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-300 transition-all shadow-sm max-w-[200px]"><div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div><div className="px-2 py-1.5 pl-3"><div className="flex items-center justify-between mb-0.5"><span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1"><Truck size={9} /> 商家自发货</span><ExternalLink size={9} className="text-blue-400 opacity-0 group-hover/supplier:opacity-100 transition-opacity" /></div><div className="font-mono text-[11px] text-slate-600 dark:text-slate-300 font-bold tracking-wide group-hover/supplier:text-blue-600 transition-colors truncate">{order.supplierTrackingNumber}</div></div></div> : <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 text-[10px]"><Truck size={12} />待商家自发货</div>}</div></td>
                                         <td className="px-4 py-4 align-top">{order.notes ? <div className="flex items-start gap-1.5 text-xs text-slate-600 bg-amber-50 p-2 rounded border border-amber-100"><StickyNote size={12} className="text-amber-500 shrink-0 mt-0.5" /><span className="line-clamp-3 leading-relaxed whitespace-pre-wrap">{order.notes}</span></div> : <span className="text-xs text-slate-300 pl-2">-</span>}</td>
                                         <td className="px-4 py-4 text-right align-top pt-6" onClick={(e) => e.stopPropagation()}><div className="flex items-center justify-end gap-1">{isTrash ? (<><button onClick={(e) => handleRestore(order.id, e)} className="p-1.5 text-emerald-500 hover:bg-emerald-50 rounded"><RotateCcw size={16} /></button><button onClick={(e) => handleDelete(order.id, e)} className="p-1.5 text-red-400 hover:bg-red-50 rounded"><Trash2 size={16} /></button></>) : (<><button onClick={(e) => handleGenerateUpdate(order, e)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded" title="生成通知"><MessageSquare size={16} /></button><button onClick={(e) => handleDelete(order.id, e)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded" title="移入回收站"><Trash2 size={16} /></button></>)}</div></td>
                                     </tr>

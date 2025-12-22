@@ -1,14 +1,14 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { ViewState, Order, Customer, SupabaseConfig, AppSettings, OrderStatus, WarningRules } from './types';
-import { Dashboard } from './components/Dashboard';
-import { OrderList } from './components/OrderList';
-import { OrderForm } from './components/OrderForm';
-import { CustomerList } from './components/CustomerList';
-import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
-import { LayoutDashboard, ShoppingCart, PlusCircle, Settings, Box, Cloud, Loader2, Database, Wifi, WifiOff, Copy, Check, ExternalLink, Truck, ChevronDown, Users, Moon, Sun, Trash2, Recycle, AlertTriangle, Hourglass, Menu, Save, Upload, Code, HelpCircle } from 'lucide-react';
-import { initSupabase, fetchCloudOrders, saveCloudOrder, deleteCloudOrder, fetchCloudCustomers, saveCloudCustomer, deleteCloudCustomer } from './services/supabaseService';
-import { syncOrderLogistics } from './services/logisticsService';
+import { ViewState, Order, Customer, SupabaseConfig, AppSettings, OrderStatus, WarningRules } from './types.ts';
+import { Dashboard } from './components/Dashboard.tsx';
+import { OrderList } from './components/OrderList.tsx';
+import { OrderForm } from './components/OrderForm.tsx';
+import { CustomerList } from './components/CustomerList.tsx';
+import { ToastContainer, ToastMessage, ToastType } from './components/Toast.tsx';
+// Added X to the imports from lucide-react to fix missing reference
+import { LayoutDashboard, ShoppingCart, PlusCircle, Settings, Box, Cloud, Loader2, Database, Wifi, WifiOff, Copy, Check, ExternalLink, Truck, ChevronDown, Users, Moon, Sun, Trash2, Recycle, AlertTriangle, Hourglass, Menu, Save, Upload, Code, HelpCircle, X } from 'lucide-react';
+import { initSupabase, fetchCloudOrders, saveCloudOrder, deleteCloudOrder, fetchCloudCustomers, saveCloudCustomer, deleteCloudCustomer } from './services/supabaseService.ts';
+import { syncOrderLogistics } from './services/logisticsService.ts';
 
 const STORAGE_KEY = 'smart_procure_data';
 const CUSTOMERS_KEY = 'smart_procure_customers';
@@ -400,10 +400,10 @@ const App: React.FC = () => {
               priceUSD: parseFloat(row['金额(USD)'] || row['priceUSD']) || 0,
               buyerAddress: row['收货地址'] || row['buyerAddress'] || '',
               platform: row['平台'] || row['platform'] || '',
-              platformOrderId: row['平台订单号'] || row['platformOrderId'] || '',
-              clientOrderId: row['客户单号'] || row['clientOrderId'] || '',
-              trackingNumber: row['出库物流单号'] || row['发货物流单号'] || row['trackingNumber'] || '',
-              supplierTrackingNumber: row['入库物流单号'] || row['采购物流单号'] || row['supplierTrackingNumber'] || '',
+              platformOrderId: row['平台采购跟踪号'] || row['平台订单号'] || row['platformOrderId'] || '',
+              clientOrderId: row['采购内部单号'] || row['客户单号'] || row['clientOrderId'] || '',
+              trackingNumber: row['平台订单号 (tiktok)'] || row['出库物流单号'] || row['发货物流单号'] || row['trackingNumber'] || '',
+              supplierTrackingNumber: row['商家自发货单号'] || row['入库物流单号'] || row['采购物流单号'] || row['supplierTrackingNumber'] || '',
               notes: row['备注'] || row['notes'] || '',
               status: status,
               purchaseDate: row['采购日期'] || row['purchaseDate'] || new Date().toISOString().split('T')[0],
