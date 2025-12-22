@@ -300,8 +300,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                             </datalist>
                         </div>
                         <div>
-                            {/* Swapped Label: Platform Order ID -> Purchase Tracking Number */}
-                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">采购单号 (物流追踪)</label>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">平台订单号 (采购单号)</label>
                             <input 
                                 type="text" 
                                 name="platformOrderId" 
@@ -315,7 +314,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
 
                     {/* Order ID Input Below Platform Section */}
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Order ID</label>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">客户内部单号 (Client Order ID)</label>
                         <input 
                             type="text" 
                             name="clientOrderId" 
@@ -334,7 +333,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                             name="notes" 
                             value={formData.notes || ''} 
                             onChange={handleChange}
-                            placeholder="可选备注..."
+                            placeholder="仅代采专员可见..."
                             className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/50 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 font-medium shadow-sm"
                         />
                     </div>
@@ -402,7 +401,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
 
                     <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">当前状态</label>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">订单进度状态</label>
                         <select 
                         name="status" 
                         value={formData.status} 
@@ -427,27 +426,26 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                     </div>
 
                     <div>
-                    {/* Swapped Label: Purchase Tracking Number -> Platform Order ID */}
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">平台订单号</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">出库物流单号 (发给客户)</label>
                     <input 
                         type="text" 
                         name="trackingNumber" 
                         value={formData.trackingNumber || ''} 
                         onChange={handleChange}
-                        placeholder="填写物流追踪单号"
+                        placeholder="填写发往目的地的国际/国内运单号"
                         className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/50 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-mono font-medium shadow-sm"
                     />
                     </div>
                     
-                    {/* Supplier Tracking (Moved from Left Column) */}
+                    {/* Supplier Tracking */}
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">平台物流单号 (商家发货)</label>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">商家发货单号 (入库跟踪)</label>
                         <input 
                             type="text" 
                             name="supplierTrackingNumber" 
                             value={formData.supplierTrackingNumber || ''} 
                             onChange={handleChange}
-                            placeholder="商家发货的物流单号"
+                            placeholder="填写供应商发往中转仓库的单号"
                             className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/50 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-mono font-medium shadow-sm"
                         />
                     </div>
