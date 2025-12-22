@@ -949,8 +949,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                         </button>
                                     </th>
                                     <th className="px-4 py-3 font-semibold w-[30%]">商品信息 / 客户单号</th>
+                                    <th className="px-4 py-3 font-semibold w-[25%]">出库物流 / 状态</th>
                                     <th className="px-4 py-3 font-semibold w-[25%]">采购来源 / 商家发货</th>
-                                    <th className="px-4 py-3 font-semibold w-[25%]">发货物流 / 状态</th>
                                     <th className="px-4 py-3 font-semibold w-[15%]">备注</th>
                                     <th className="px-4 py-3 font-semibold text-right">操作</th>
                                 </tr>
@@ -1000,45 +1000,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                             </div>
                                         </td>
 
-                                        {/* Procurement Source */}
-                                        <td className="px-4 py-4 align-top">
-                                            <div className="space-y-3">
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                                                        {order.platform}
-                                                    </span>
-                                                    {order.platformOrderId ? (
-                                                        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400" title="平台订单号">#{order.platformOrderId}</span>
-                                                    ) : (
-                                                        <span className="text-[10px] text-slate-300 italic">无平台单号</span>
-                                                    )}
-                                                </div>
-
-                                                {/* Inbound Tracking Card */}
-                                                {order.supplierTrackingNumber ? (
-                                                    <div onClick={(e) => open17Track(order.supplierTrackingNumber!, e)} className="group/supplier cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all shadow-sm max-w-[200px]">
-                                                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
-                                                         <div className="px-2 py-1.5 pl-3">
-                                                            <div className="flex items-center justify-between mb-0.5">
-                                                                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1">
-                                                                    <Truck size={9} /> 商家发货 (入库)
-                                                                </span>
-                                                            </div>
-                                                            <div className="font-mono text-[11px] text-slate-600 dark:text-slate-300 font-bold tracking-wide group-hover/supplier:text-blue-600 transition-colors truncate">
-                                                                {order.supplierTrackingNumber}
-                                                            </div>
-                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 max-w-[200px]">
-                                                        <Truck size={12} />
-                                                        <span className="text-[10px]">待商家发货</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </td>
-
-                                        {/* Logistics & Status */}
+                                        {/* Logistics & Status (Moved to 3rd Column) */}
                                         <td className="px-4 py-4 align-top">
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
@@ -1096,6 +1058,44 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                                     <MapPin size={12} className="mt-0.5 shrink-0 text-slate-400" />
                                                     <span className="line-clamp-1 opacity-90">{order.buyerAddress}</span>
                                                 </div>
+                                            </div>
+                                        </td>
+
+                                        {/* Procurement Source (Moved to 4th Column) */}
+                                        <td className="px-4 py-4 align-top">
+                                            <div className="space-y-3">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                                        {order.platform}
+                                                    </span>
+                                                    {order.platformOrderId ? (
+                                                        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400" title="平台订单号">#{order.platformOrderId}</span>
+                                                    ) : (
+                                                        <span className="text-[10px] text-slate-300 italic">无平台单号</span>
+                                                    )}
+                                                </div>
+
+                                                {/* Inbound Tracking Card */}
+                                                {order.supplierTrackingNumber ? (
+                                                    <div onClick={(e) => open17Track(order.supplierTrackingNumber!, e)} className="group/supplier cursor-pointer relative overflow-hidden bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all shadow-sm max-w-[200px]">
+                                                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
+                                                         <div className="px-2 py-1.5 pl-3">
+                                                            <div className="flex items-center justify-between mb-0.5">
+                                                                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1">
+                                                                    <Truck size={9} /> 商家发货 (入库)
+                                                                </span>
+                                                            </div>
+                                                            <div className="font-mono text-[11px] text-slate-600 dark:text-slate-300 font-bold tracking-wide group-hover/supplier:text-blue-600 transition-colors truncate">
+                                                                {order.supplierTrackingNumber}
+                                                            </div>
+                                                         </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 max-w-[200px]">
+                                                        <Truck size={12} />
+                                                        <span className="text-[10px]">待商家发货</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </td>
 
