@@ -378,14 +378,14 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-2">
                                             <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600">{order.platform}</span>
-                                            {order.trackingNumber && <span className="text-[10px] font-mono text-slate-500">{order.trackingNumber}</span>}
+                                            {order.platformOrderId && <span className="text-[10px] font-mono text-slate-500" title="平台单号 (tiktok)">#{order.platformOrderId}</span>}
                                         </div>
-                                        {order.platformOrderId && (
-                                            <div className="p-2 border rounded-lg bg-white">
-                                                <div className="text-[9px] text-slate-400 font-bold uppercase">平台单号（tiktok）</div>
-                                                <div className="font-mono text-[10px] text-slate-600 truncate">#{order.platformOrderId}</div>
+                                        {order.trackingNumber ? (
+                                            <div onClick={(e) => open17Track(order.trackingNumber!, e)} className="p-2 border rounded-lg bg-white hover:border-blue-400 transition-all cursor-pointer">
+                                                <div className="text-[9px] text-slate-400 font-bold uppercase">平台采购跟踪号</div>
+                                                <div className="font-mono text-[10px] text-slate-600 truncate">{order.trackingNumber}</div>
                                             </div>
-                                        )}
+                                        ) : <div className="text-[10px] text-slate-300 italic">待平台分配跟踪号</div>}
                                     </div>
                                 </td>
                                 <td className="px-4 py-4 align-top">{order.notes ? <div className="text-xs text-slate-600 bg-amber-50 p-2 rounded border border-amber-100 line-clamp-3 leading-relaxed">{order.notes}</div> : <span className="text-slate-300">-</span>}</td>
