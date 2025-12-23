@@ -1,14 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ViewState, Order, Customer, SupabaseConfig, AppSettings, OrderStatus, WarningRules, ThemeType } from './types';
 import { Dashboard } from './components/Dashboard';
 import { OrderList } from './components/OrderList';
 import { OrderForm } from './components/OrderForm';
 import { CustomerList } from './components/CustomerList';
 import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
-import { LayoutDashboard, ShoppingCart, Settings, Box, Cloud, Database, ExternalLink, ChevronDown, Users, Moon, Trash2, Menu, Plus, Sparkles, Droplets, Globe, Compass, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Settings, Box, Cloud, Database, ExternalLink, ChevronDown, Users, Moon, Trash2, Menu, Plus, Sparkles, Droplets, Globe, Compass, ShieldCheck, Download, Upload, FileJson, DatabaseBackup } from 'lucide-react';
 import { initSupabase, fetchCloudOrders, saveCloudOrder, fetchCloudCustomers, saveCloudCustomer, deleteCloudCustomer } from './services/supabaseService';
 import { syncOrderLogistics } from './services/logisticsService';
+import { exportToJSON, parseJSONFile } from './services/dataService';
 
 const STORAGE_KEY = 'smart_procure_data';
 const CUSTOMERS_KEY = 'smart_procure_customers';
@@ -41,6 +42,7 @@ const App: React.FC = () => {
   
   const [isCloudMode, setIsCloudMode] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
+  const backupInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const savedSettings = localStorage.getItem(SETTINGS_KEY);
@@ -116,6 +118,124 @@ const App: React.FC = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newOrders));
     if (!silent) { setView('list'); setEditingOrder(null); }
     if (isCloudMode) { try { await saveCloudOrder(order); if (!silent) showToast('已保存到云端', 'success'); } catch (e) { if (!silent) showToast("同步失败", 'error'); } }
+  };
+
+  const handleImportOrders = async (data: any[], format: 'csv' | 'json' = 'csv') => {
+      let importedOrders: Order[] = [];
+      
+      if (format === 'json') {
+          importedOrders = data.map(o => ({ ...o, id: o.id || crypto.randomUUID() }));
+      } else {
+          importedOrders = data.map(item => ({
+              id: item.id || crypto.randomUUID(),
+              itemName: item['商品名称'] || item.itemName || '未知商品',
+              quantity: parseInt(item['数量'] || item.quantity) || 1,
+              priceUSD: parseFloat(item['美金单价'] || item.priceUSD) || 0,
+              buyerAddress: item['收货地址'] || item.buyerAddress || '',
+              purchaseDate: item['采购日期'] || item.purchaseDate || new Date().toISOString().split('T')[0],
+              platform: item['平台'] || item.platform || '',
+              platformOrderId: item['平台单号'] || item.platformOrderId || '',
+              clientOrderId: item['内部单号'] || item.clientOrderId || '',
+              status: (item['状态'] || item.status) as OrderStatus || OrderStatus.PENDING,
+              trackingNumber: item['物流单号'] || item.trackingNumber || '',
+              supplierTrackingNumber: item['供应商单号'] || item.supplierTrackingNumber || '',
+              notes: item['备注'] || item.notes || '',
+              lastUpdated: new Date().toISOString()
+          }));
+      }
+
+      const newOrders = [...importedOrders, ...orders];
+      const uniqueOrders = Array.from(new Map(newOrders.map(o => [o.id, o])).values());
+      
+      setOrders(uniqueOrders);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(uniqueOrders));
+      showToast(`成功导入 ${importedOrders.length} 条项目`, 'success');
+      
+      if (isCloudMode) {
+          try {
+              await Promise.all(importedOrders.map(o => saveCloudOrder(o)));
+          } catch (e) {
+              showToast('部分数据云端同步失败', 'error');
+          }
+      }
+  };
+
+  const handleImportCustomers = async (data: any[], format: 'csv' | 'json' = 'csv') => {
+      let importedCustomers: Customer[] = [];
+      
+      if (format === 'json') {
+          importedCustomers = data.map(c => ({ ...c, id: c.id || crypto.randomUUID() }));
+      } else {
+          importedCustomers = data.map(item => ({
+              id: item.id || crypto.randomUUID(),
+              name: item['合伙人姓名'] || item.name || '',
+              phone: item['联系电话'] || item.phone || '',
+              address: item['收货地址'] || item.address || '',
+              notes: item['备注'] || item.notes || ''
+          })).filter(c => c.name && c.address);
+      }
+
+      const newCustomers = [...importedCustomers, ...customers];
+      const uniqueCustomers = Array.from(new Map(newCustomers.map(c => [c.id, c])).values());
+      
+      setCustomers(uniqueCustomers);
+      localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(uniqueCustomers));
+      showToast(`成功导入 ${importedCustomers.length} 位合伙人`, 'success');
+
+      if (isCloudMode) {
+          try {
+              await Promise.all(importedCustomers.map(c => saveCloudCustomer(c)));
+          } catch (e) {
+              showToast('合伙人云端同步失败', 'error');
+          }
+      }
+  };
+
+  const handleFullBackup = () => {
+    const backupData = {
+        orders,
+        customers,
+        settings,
+        exportDate: new Date().toISOString(),
+        version: "1.2.0"
+    };
+    exportToJSON(backupData, `探行科技_全量备份_${new Date().toISOString().split('T')[0]}.json`);
+    showToast('全量数据已导出为 JSON', 'success');
+  };
+
+  const handleRestoreClick = () => {
+    backupInputRef.current?.click();
+  };
+
+  const handleFileRestore = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+        const data = await parseJSONFile(file);
+        if (data.orders || data.customers) {
+            if (window.confirm("这将覆盖您当前的本地数据，确定要从备份中恢复吗？")) {
+                if (data.orders) {
+                    setOrders(data.orders);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(data.orders));
+                }
+                if (data.customers) {
+                    setCustomers(data.customers);
+                    localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(data.customers));
+                }
+                if (data.settings) {
+                    setSettings(data.settings);
+                    localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings));
+                }
+                showToast('全量数据恢复成功', 'success');
+            }
+        } else {
+            showToast('无效的备份文件格式', 'error');
+        }
+    } catch (err) {
+        showToast('解析 JSON 失败', 'error');
+    }
+    e.target.value = '';
   };
 
   const handleDeleteOrder = async (id: string) => {
@@ -233,6 +353,7 @@ const App: React.FC = () => {
     <div className="min-h-screen flex font-sans selection:bg-indigo-500/30">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
       {isMobileMenuOpen && <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
+      <input type="file" ref={backupInputRef} onChange={handleFileRestore} accept=".json" className="hidden" />
 
       <aside className={`fixed md:sticky top-4 left-4 h-[calc(100vh-2rem)] w-72 premium-glass rounded-[2.5rem] premium-shadow z-50 transition-all duration-500 md:translate-x-0 flex flex-col m-0 overflow-hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-[calc(100%+2rem)]'}`}>
         <div className="p-10 flex items-center gap-4 shrink-0">
@@ -267,18 +388,31 @@ const App: React.FC = () => {
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">快捷资源</span>
                 <ChevronDown size={14} className={`text-slate-500 transition-transform duration-300 ${isPlatformsOpen ? 'rotate-180' : ''}`} />
             </button>
-            <div className={`space-y-1.5 transition-all duration-500 overflow-hidden flex flex-col ${isPlatformsOpen ? 'max-h-none opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className={`space-y-1.5 transition-all duration-500 overflow-hidden flex flex-col ${isPlatformsOpen ? 'max-h-none opacity-100 pb-4' : 'max-h-0 opacity-0'}`}>
+              <div className="px-4 py-2 text-[9px] font-black text-slate-600 uppercase tracking-widest">Global Market</div>
+              <PurchaseLink href="https://www.amazon.com" label="Amazon" sub="amazon.com" />
+              <PurchaseLink href="https://www.ebay.com" label="eBay" sub="ebay.com" />
+              <PurchaseLink href="https://www.etsy.com" label="Etsy" sub="etsy.com" />
+              <PurchaseLink href="https://www.walmart.com" label="Walmart" sub="walmart.com" />
+              
+              <div className="my-2 border-t border-white/5 mx-4"></div>
+              
+              <div className="px-4 py-2 text-[9px] font-black text-slate-600 uppercase tracking-widest">Cross-Border</div>
+              <PurchaseLink href="https://www.temu.com" label="Temu" sub="temu.com" />
+              <PurchaseLink href="https://www.shein.com" label="SHEIN" sub="shein.com" />
               <PurchaseLink href="https://www.aliexpress.com" label="AliExpress" sub="aliexpress.com" />
+              
+              <div className="my-2 border-t border-white/5 mx-4"></div>
+              
+              <div className="px-4 py-2 text-[9px] font-black text-slate-600 uppercase tracking-widest">Sourcing & B2B</div>
               <PurchaseLink href="https://www.alibaba.com" label="Alibaba.com" sub="alibaba.com" />
-              <PurchaseLink href="https://www.amazon.com" label="Amazon Global" sub="amazon.com" />
-              <div className="my-4 border-t border-white/5 mx-4"></div>
               <PurchaseLink href="https://www.1688.com" label="1688 源头批发" sub="1688.com" />
               <PurchaseLink href="https://www.taobao.com" label="淘宝/天猫" sub="taobao.com" />
             </div>
           </div>
         </nav>
 
-        <div className="p-8 border-t border-white/5 shrink-0 bg-white/5">
+        <div className="p-8 border-t border-white/5 shrink-0 bg-white/5 space-y-3">
              <div className="px-5 py-4 rounded-[1.25rem] border border-white/10 premium-glass flex items-center gap-4 group cursor-pointer transition-all hover:bg-white/10">
                 <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
                    {isCloudMode ? <ShieldCheck size={16} className="text-emerald-400" /> : <Database size={16} className="text-slate-400" />}
@@ -288,6 +422,15 @@ const App: React.FC = () => {
                    <p className="text-[9px] text-slate-500 font-medium">System Secure</p>
                 </div>
                 <Settings size={14} className="text-slate-500 group-hover:rotate-90 transition-transform duration-700" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+                <button onClick={handleFullBackup} className="flex items-center justify-center gap-2 p-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                    <Download size={12} /> 备份
+                </button>
+                <button onClick={handleRestoreClick} className="flex items-center justify-center gap-2 p-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                    <Upload size={12} /> 恢复
+                </button>
             </div>
         </div>
       </aside>
@@ -313,9 +456,9 @@ const App: React.FC = () => {
 
         <div className="flex-1 max-w-[1600px] mx-auto w-full">
           {view === 'dashboard' && <Dashboard orders={orders.filter(o => !o.deleted)} onNavigate={(f) => { setActiveFilter(f); setView('list'); }} />}
-          {view === 'list' && <OrderList orders={orders.filter(o => !o.deleted)} initialFilter={activeFilter} onEdit={handleEditOrder} onDelete={handleDeleteOrder} onDuplicate={handleDuplicateOrder} onSync={handleSyncLogistics} isSyncing={syncStatus === 'syncing'} />}
+          {view === 'list' && <OrderList orders={orders.filter(o => !o.deleted)} initialFilter={activeFilter} onEdit={handleEditOrder} onDelete={handleDeleteOrder} onDuplicate={handleDuplicateOrder} onSync={handleSyncLogistics} onImport={handleImportOrders} isSyncing={syncStatus === 'syncing'} />}
           {view === 'trash' && <OrderList orders={orders.filter(o => o.deleted)} onEdit={() => {}} onDelete={() => {}} onRestore={handleRestoreOrder} isTrash={true} onSync={() => {}} isSyncing={false} />}
-          {view === 'customers' && <CustomerList customers={customers} onSave={handleSaveCustomer} onDelete={handleDeleteCustomer} />}
+          {view === 'customers' && <CustomerList customers={customers} onSave={handleSaveCustomer} onDelete={handleDeleteCustomer} onImport={handleImportCustomers} />}
           {(view === 'add' || view === 'edit') && (
             <OrderForm 
               initialOrder={editingOrder} 

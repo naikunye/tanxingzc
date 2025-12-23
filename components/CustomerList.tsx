@@ -1,21 +1,23 @@
 
 import React, { useState, useRef } from 'react';
 import { Customer } from '../types';
-import { Search, Plus, Trash2, MapPin, Phone, User, X, Save, Upload, Download } from 'lucide-react';
+import { Search, Plus, Trash2, MapPin, Phone, User, X, Save, Upload, Download, FileJson } from 'lucide-react';
 import { parseCSV, exportToCSV } from '../services/csvService';
+import { parseJSONFile, exportToJSON } from '../services/dataService';
 
 interface CustomerListProps {
   customers: Customer[];
   onSave: (customer: Customer) => void;
   onDelete: (id: string) => void;
-  onImport?: (data: any[]) => void;
+  onImport?: (data: any[], format: 'csv' | 'json') => void;
 }
 
 export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, onDelete, onImport }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Partial<Customer>>({});
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const jsonInputRef = useRef<HTMLInputElement>(null);
 
   const filteredCustomers = customers.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,7 +31,6 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
   };
 
   const handleAdd = () => {
-    // Fix: Removed 'tags' property as it is not part of the Customer interface
     setEditingCustomer({
       id: crypto.randomUUID(),
       name: '',
@@ -56,29 +57,38 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
       onDelete(id);
   }
 
-  const handleExport = () => {
+  const handleExportCSV = () => {
       const headers = ['ID', '合伙人姓名', '联系电话', '收货地址', '备注'];
       const keys = ['id', 'name', 'phone', 'address', 'notes'];
       const filename = `探行科技_合伙人列表_${new Date().toISOString().split('T')[0]}.csv`;
       exportToCSV(customers, headers, keys, filename);
   };
 
-  const handleImportClick = () => {
-      if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-          fileInputRef.current.click();
-      }
+  const handleExportJSON = () => {
+      const filename = `探行科技_合伙人列表_${new Date().toISOString().split('T')[0]}.json`;
+      exportToJSON(customers, filename);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCSVFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file && onImport) {
           try {
               const data = await parseCSV(file);
-              onImport(data);
+              onImport(data, 'csv');
           } catch (error) {
-              alert('CSV 解析失败，请检查文件格式是否正确。');
-              console.error(error);
+              alert('CSV 解析失败');
+          }
+      }
+  };
+
+  const handleJSONFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file && onImport) {
+          try {
+              const data = await parseJSONFile(file);
+              onImport(data, 'json');
+          } catch (error) {
+              alert('JSON 解析失败');
           }
       }
   };
@@ -105,16 +115,6 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
                       />
                   </div>
                   <div>
-                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">联系电话</label>
-                      <input 
-                          type="text" 
-                          value={editingCustomer.phone || ''} 
-                          onChange={e => setEditingCustomer({...editingCustomer, phone: e.target.value})}
-                          className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl focus:border-indigo-500 outline-none text-white font-medium transition-all"
-                          placeholder="输入联系电话"
-                      />
-                  </div>
-                  <div>
                       <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">固定收货地址 *</label>
                       <textarea 
                           value={editingCustomer.address || ''} 
@@ -123,16 +123,6 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
                           rows={3}
                           placeholder="输入详细的收货地址"
                           required
-                      />
-                  </div>
-                   <div>
-                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">备注说明</label>
-                      <input 
-                          type="text" 
-                          value={editingCustomer.notes || ''} 
-                          onChange={e => setEditingCustomer({...editingCustomer, notes: e.target.value})}
-                          className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl focus:border-indigo-500 outline-none text-white font-medium transition-all"
-                          placeholder="额外说明信息..."
                       />
                   </div>
                   <div className="flex justify-end gap-4 pt-6 mt-4">
@@ -148,13 +138,8 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
 
   return (
     <div className="space-y-8 animate-fade-in">
-        <input 
-            type="file" 
-            ref={fileInputRef} 
-            className="hidden" 
-            accept=".csv" 
-            onChange={handleFileChange} 
-        />
+        <input type="file" ref={csvInputRef} className="hidden" accept=".csv" onChange={handleCSVFileChange} />
+        <input type="file" ref={jsonInputRef} className="hidden" accept=".json" onChange={handleJSONFileChange} />
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
              <div className="relative w-full md:max-w-xl group">
@@ -169,15 +154,23 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
             </div>
             <div className="flex items-center gap-4 w-full md:w-auto">
                 {onImport && (
-                    <button onClick={handleImportClick} className="px-5 py-4 premium-glass border-white/5 text-slate-400 hover:text-white rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all">
-                        <Upload size={16} />
-                        批量导入
-                    </button>
+                    <div className="flex premium-glass rounded-2xl border-white/5 overflow-hidden">
+                        <button onClick={() => csvInputRef.current?.click()} className="px-5 py-4 text-slate-400 hover:text-white hover:bg-white/5 text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all border-r border-white/5">
+                            <Upload size={16} /> CSV
+                        </button>
+                        <button onClick={() => jsonInputRef.current?.click()} className="px-5 py-4 text-indigo-400 hover:text-indigo-300 hover:bg-white/5 text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all">
+                            <FileJson size={16} /> JSON
+                        </button>
+                    </div>
                 )}
-                <button onClick={handleExport} className="px-5 py-4 premium-glass border-white/5 text-emerald-400 hover:text-emerald-300 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all">
-                    <Download size={16} />
-                    导出数据
-                </button>
+                <div className="flex premium-glass rounded-2xl border-white/5 overflow-hidden">
+                    <button onClick={handleExportCSV} className="px-5 py-4 text-emerald-400 hover:text-emerald-300 hover:bg-white/5 text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all border-r border-white/5">
+                        <Download size={16} /> CSV
+                    </button>
+                    <button onClick={handleExportJSON} className="px-5 py-4 text-emerald-400 hover:text-emerald-300 hover:bg-white/5 text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all">
+                        <FileJson size={16} /> JSON
+                    </button>
+                </div>
                 <button onClick={handleAdd} className="w-full md:w-auto px-8 py-4 bg-white text-indigo-950 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-50 shadow-2xl transition-all flex items-center justify-center gap-3">
                     <Plus size={20} strokeWidth={3} />
                     新增合伙人
@@ -188,8 +181,6 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredCustomers.map(customer => (
                 <div key={customer.id} onClick={() => handleEdit(customer)} className="group bg-white/5 premium-glass rounded-[2.5rem] border border-white/5 p-8 hover:border-indigo-500/20 transition-all cursor-pointer relative overflow-hidden">
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[50px] -z-10 group-hover:bg-indigo-500/10 transition-colors" />
-                     
                      <div className="flex justify-between items-start mb-6">
                          <div className="flex items-center gap-4">
                              <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-display font-black text-xl border border-indigo-500/20 shadow-xl group-hover:rotate-6 transition-transform">
@@ -199,7 +190,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
                                  <h3 className="font-display font-bold text-lg text-white group-hover:text-indigo-400 transition-colors">{customer.name}</h3>
                                  <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 tracking-tight mt-1">
                                      <Phone size={12} className="text-slate-600" />
-                                     {customer.phone || '未录入联系方式'}
+                                     {customer.phone || '未录入电话'}
                                  </div>
                              </div>
                          </div>
@@ -213,22 +204,9 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
                              <MapPin size={16} className="shrink-0 mt-0.5 text-indigo-500/60" />
                              <span className="leading-relaxed line-clamp-2">{customer.address}</span>
                          </div>
-                         {customer.notes && (
-                            <div className="px-4 py-2 rounded-xl bg-amber-500/5 border border-amber-500/10 text-[10px] text-amber-500/80 font-bold flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></div>
-                                {customer.notes}
-                            </div>
-                         )}
                      </div>
                 </div>
             ))}
-             {filteredCustomers.length === 0 && (
-                <div className="col-span-full py-32 flex flex-col items-center justify-center premium-glass rounded-[3rem] border-white/5">
-                    <User size={48} className="text-slate-800 mb-6 opacity-40" />
-                    <h3 className="text-xl font-display font-bold text-slate-500">未找到相关合伙人</h3>
-                    <p className="text-xs text-slate-600 mt-2 uppercase tracking-widest">请尝试调整搜索关键词</p>
-                </div>
-            )}
         </div>
     </div>
   );
