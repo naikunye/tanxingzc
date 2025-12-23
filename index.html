@@ -120,6 +120,19 @@
         pointer-events: none;
         z-index: 9999;
       }
+
+      /* Fix Recharts focus outline and selection box issues */
+      .recharts-surface:focus, 
+      .recharts-wrapper:focus, 
+      .recharts-sector:focus,
+      .recharts-rectangle:focus,
+      path:focus {
+        outline: none !important;
+      }
+      
+      svg {
+        overflow: visible;
+      }
     </style>
   <script type="importmap">
 {

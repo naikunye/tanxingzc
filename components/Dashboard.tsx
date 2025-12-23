@@ -71,10 +71,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate }) => {
             </div>
             <ResponsiveContainer width="100%" height="75%">
                 <PieChart>
-                    <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={100} outerRadius={150} paddingAngle={8} stroke="none">
-                        {statusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
+                    <Pie 
+                      data={statusData} 
+                      dataKey="value" 
+                      nameKey="name" 
+                      cx="50%" 
+                      cy="50%" 
+                      innerRadius={100} 
+                      outerRadius={150} 
+                      paddingAngle={8} 
+                      stroke="none"
+                      activeShape={false} // Disable default active shape to prevent white box
+                      isAnimationActive={true}
+                    >
+                        {statusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} style={{ outline: 'none' }} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '16px', fontSize: '12px', padding: '12px 20px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#0f172a', 
+                        border: 'none', 
+                        borderRadius: '16px', 
+                        fontSize: '12px', 
+                        padding: '12px 20px', 
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                        color: '#f8fafc'
+                      }} 
+                      itemStyle={{ color: '#f1f5f9' }}
+                      labelStyle={{ color: '#94a3b8' }}
+                    />
                 </PieChart>
             </ResponsiveContainer>
         </div>
@@ -95,9 +119,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate }) => {
                 <BarChart data={statusData}>
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }} dy={20} />
                     <YAxis hide />
-                    <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '16px' }} />
-                    <Bar dataKey="value" radius={[20, 20, 20, 20]} barSize={40}>
-                        {statusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
+                    <Tooltip 
+                      cursor={{ fill: 'rgba(255,255,255,0.02)' }} 
+                      contentStyle={{ 
+                        backgroundColor: '#0f172a', 
+                        border: 'none', 
+                        borderRadius: '16px',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                        color: '#f8fafc'
+                      }} 
+                      itemStyle={{ color: '#f1f5f9' }}
+                      labelStyle={{ color: '#94a3b8' }}
+                    />
+                    <Bar 
+                      dataKey="value" 
+                      radius={[20, 20, 20, 20]} 
+                      barSize={40}
+                      activeBar={false} // Disable default active bar focus/outline
+                    >
+                        {statusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} style={{ outline: 'none' }} />)}
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>
