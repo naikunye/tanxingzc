@@ -25,7 +25,7 @@ const App: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
-  const [activeFilter, setActiveFilter] = useState<OrderStatus | 'All' | 'delayed'>('All');
+  const [activeFilter, setActiveFilter] = useState<OrderStatus | 'All'>('All');
   
   const [isPlatformsOpen, setIsPlatformsOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -35,7 +35,8 @@ const App: React.FC = () => {
     cloudConfig: { url: '', key: '' },
     tracking17Token: '',
     theme: 'dark', 
-    warningRules: DEFAULT_WARNING_RULES
+    warningRules: DEFAULT_WARNING_RULES,
+    defaultExchangeRate: 7.25
   });
   
   const [isCloudMode, setIsCloudMode] = useState(false);
@@ -51,7 +52,8 @@ const App: React.FC = () => {
             cloudConfig: config.url ? config : { url: '', key: '' },
             tracking17Token: parsed.tracking17Token || '',
             theme: parsed.theme || 'dark', 
-            warningRules: { ...DEFAULT_WARNING_RULES, ...parsed.warningRules }
+            warningRules: { ...DEFAULT_WARNING_RULES, ...parsed.warningRules },
+            defaultExchangeRate: parsed.defaultExchangeRate || 7.25
         };
         setSettings(currentSettings);
         applyTheme(currentSettings.theme);
@@ -139,6 +141,24 @@ const App: React.FC = () => {
     setView('edit');
   };
 
+  const handleDuplicateOrder = (order: Order) => {
+    const duplicated: Order = {
+        ...order,
+        id: crypto.randomUUID(),
+        status: OrderStatus.PENDING,
+        purchaseDate: new Date().toISOString().split('T')[0],
+        lastUpdated: new Date().toISOString(),
+        trackingNumber: '',
+        supplierTrackingNumber: '',
+        platformOrderId: '',
+        deleted: false,
+        deletedAt: undefined
+    };
+    setEditingOrder(duplicated);
+    setView('add');
+    showToast('已载入订单模板', 'success');
+  };
+
   const handleSaveCustomer = async (customer: Customer) => {
     let newCustomers = [...customers];
     const index = newCustomers.findIndex(c => c.id === customer.id);
@@ -156,14 +176,6 @@ const App: React.FC = () => {
         localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(newCustomers));
         showToast('客户已删除', 'info');
         if (isCloudMode) { try { await deleteCloudCustomer(id); } catch (e) { showToast("同步删除失败", 'error'); } }
-    }
-  };
-
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    const order = orders.find(o => o.id === orderId);
-    if (order && order.status !== newStatus) {
-        const updatedOrder = { ...order, status: newStatus, lastUpdated: new Date().toISOString() };
-        handleSaveOrder(updatedOrder, true);
     }
   };
 
@@ -220,10 +232,8 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex font-sans selection:bg-indigo-500/30">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-
       {isMobileMenuOpen && <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
 
-      {/* 悬浮侧边栏 */}
       <aside className={`fixed md:sticky top-4 left-4 h-[calc(100vh-2rem)] w-72 premium-glass rounded-[2.5rem] premium-shadow z-50 transition-all duration-500 md:translate-x-0 flex flex-col m-0 overflow-hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-[calc(100%+2rem)]'}`}>
         <div className="p-10 flex items-center gap-4 shrink-0">
           <div className="bg-indigo-600 p-3 rounded-2xl shadow-2xl shadow-indigo-600/40 rotate-3">
@@ -258,25 +268,12 @@ const App: React.FC = () => {
                 <ChevronDown size={14} className={`text-slate-500 transition-transform duration-300 ${isPlatformsOpen ? 'rotate-180' : ''}`} />
             </button>
             <div className={`space-y-1.5 transition-all duration-500 overflow-hidden flex flex-col ${isPlatformsOpen ? 'max-h-none opacity-100' : 'max-h-0 opacity-0'}`}>
-              
-              <div className="px-4 py-2 text-[9px] font-bold text-indigo-400/60 uppercase tracking-widest flex items-center gap-2">
-                <Globe size={10} /> 跨境直采站
-              </div>
               <PurchaseLink href="https://www.aliexpress.com" label="AliExpress" sub="aliexpress.com" />
               <PurchaseLink href="https://www.alibaba.com" label="Alibaba.com" sub="alibaba.com" />
               <PurchaseLink href="https://www.amazon.com" label="Amazon Global" sub="amazon.com" />
-              <PurchaseLink href="https://www.temu.com" label="Temu (US)" sub="temu.com" />
-              <PurchaseLink href="https://www.shein.com" label="SHEIN" sub="shein.com" />
-              
               <div className="my-4 border-t border-white/5 mx-4"></div>
-              
-              <div className="px-4 py-2 text-[9px] font-bold text-slate-500/60 uppercase tracking-widest flex items-center gap-2">
-                <Compass size={10} /> 国内供应链
-              </div>
               <PurchaseLink href="https://www.1688.com" label="1688 源头批发" sub="1688.com" />
               <PurchaseLink href="https://www.taobao.com" label="淘宝/天猫" sub="taobao.com" />
-              <PurchaseLink href="https://www.jd.com" label="京东自营" sub="jd.com" />
-              <PurchaseLink href="https://www.pinduoduo.com" label="拼多多" sub="pinduoduo.com" />
             </div>
           </div>
         </nav>
@@ -296,13 +293,12 @@ const App: React.FC = () => {
       </aside>
 
       <main className="flex-1 overflow-auto flex flex-col p-4 md:p-8 space-y-8 animate-slide-up">
-        {/* 顶部通栏 */}
         <header className="flex justify-between items-center bg-transparent z-20">
             <div className="flex items-center gap-6">
                 <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-3 premium-glass rounded-2xl text-slate-400"><Menu size={24} /></button>
                 <div className="space-y-1">
                     <h2 className="text-3xl font-display font-bold tracking-tight text-white capitalize">
-                        {view === 'add' || view === 'edit' ? (editingOrder ? 'Edit Order' : 'New Project') : view === 'list' ? 'Order Queue' : view === 'customers' ? 'Partners' : view === 'trash' ? 'Archive' : 'Overview'}
+                        {view === 'add' || view === 'edit' ? (editingOrder ? 'Edit Project' : 'New Project') : view === 'list' ? 'Order Queue' : view === 'customers' ? 'Partners' : view === 'trash' ? 'Archive' : 'Overview'}
                     </h2>
                     <p className="text-xs text-slate-500 font-medium tracking-wide">Procurement Intelligence Operating System</p>
                 </div>
@@ -315,13 +311,20 @@ const App: React.FC = () => {
             </div>
         </header>
 
-        {/* 内容区域 */}
         <div className="flex-1 max-w-[1600px] mx-auto w-full">
-          {view === 'dashboard' && <Dashboard orders={orders.filter(o => !o.deleted)} warningRules={settings.warningRules} onNavigate={(f) => { setActiveFilter(f); setView('list'); }} />}
-          {view === 'list' && <OrderList orders={orders.filter(o => !o.deleted)} initialFilter={activeFilter} warningRules={settings.warningRules} onEdit={handleEditOrder} onDelete={handleDeleteOrder} onSync={handleSyncLogistics} isSyncing={syncStatus === 'syncing'} onStatusChange={handleStatusChange} />}
-          {view === 'trash' && <OrderList orders={orders.filter(o => o.deleted)} warningRules={settings.warningRules} onEdit={() => {}} onDelete={() => {}} onRestore={handleRestoreOrder} isTrash={true} onSync={() => {}} isSyncing={false} />}
+          {view === 'dashboard' && <Dashboard orders={orders.filter(o => !o.deleted)} onNavigate={(f) => { setActiveFilter(f); setView('list'); }} />}
+          {view === 'list' && <OrderList orders={orders.filter(o => !o.deleted)} initialFilter={activeFilter} onEdit={handleEditOrder} onDelete={handleDeleteOrder} onDuplicate={handleDuplicateOrder} onSync={handleSyncLogistics} isSyncing={syncStatus === 'syncing'} />}
+          {view === 'trash' && <OrderList orders={orders.filter(o => o.deleted)} onEdit={() => {}} onDelete={() => {}} onRestore={handleRestoreOrder} isTrash={true} onSync={() => {}} isSyncing={false} />}
           {view === 'customers' && <CustomerList customers={customers} onSave={handleSaveCustomer} onDelete={handleDeleteCustomer} />}
-          {(view === 'add' || view === 'edit') && <OrderForm initialOrder={editingOrder} customers={customers} onSave={handleSaveOrder} onCancel={() => setView('list')} />}
+          {(view === 'add' || view === 'edit') && (
+            <OrderForm 
+              initialOrder={editingOrder} 
+              customers={customers} 
+              onSave={handleSaveOrder} 
+              onCancel={() => setView('list')} 
+              onNavigateToCustomers={() => setView('customers')}
+            />
+          )}
         </div>
       </main>
     </div>

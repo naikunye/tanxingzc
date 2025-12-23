@@ -29,12 +29,12 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
   };
 
   const handleAdd = () => {
+    // Fix: Removed 'tags' property as it is not part of the Customer interface
     setEditingCustomer({
       id: crypto.randomUUID(),
       name: '',
       phone: '',
       address: '',
-      tags: [],
       notes: ''
     });
     setIsEditing(true);

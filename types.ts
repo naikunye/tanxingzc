@@ -1,4 +1,5 @@
 
+
 export enum OrderStatus {
   PENDING = 'Pending',
   PURCHASED = 'Purchased',
@@ -9,21 +10,13 @@ export enum OrderStatus {
 }
 
 export const OrderStatusCN: Record<OrderStatus, string> = {
-  [OrderStatus.PENDING]: '代采购',
-  [OrderStatus.PURCHASED]: '已采购',
+  [OrderStatus.PENDING]: '等待采购',
+  [OrderStatus.PURCHASED]: '已订购',
   [OrderStatus.READY_TO_SHIP]: '待发货',
   [OrderStatus.SHIPPED]: '已发货',
-  [OrderStatus.DELIVERED]: '已签收',
+  [OrderStatus.DELIVERED]: '已收货',
   [OrderStatus.CANCELLED]: '已取消'
 };
-
-export const TIMELINE_STEPS = [
-  OrderStatus.PENDING,
-  OrderStatus.PURCHASED,
-  OrderStatus.READY_TO_SHIP,
-  OrderStatus.SHIPPED,
-  OrderStatus.DELIVERED
-];
 
 export interface Order {
   id: string;
@@ -31,22 +24,18 @@ export interface Order {
   quantity: number;
   priceUSD: number;
   buyerAddress: string;
-  purchaseDate: string; // ISO Date string
+  purchaseDate: string;
   platform: string;
   platformOrderId?: string;
   clientOrderId?: string;
   status: OrderStatus;
-  
-  // Logistics
+  // Added detailedStatus to fix Property 'detailedStatus' does not exist on type 'Order' in logisticsService.ts
+  detailedStatus?: string;
   trackingNumber?: string;
   supplierTrackingNumber?: string;
-  detailedStatus?: string;
-  
   imageUrl?: string;
   notes?: string;
   lastUpdated: string;
-  
-  // Soft Delete Fields
   deleted?: boolean;
   deletedAt?: string;
 }
@@ -56,16 +45,16 @@ export interface Customer {
     name: string;
     phone?: string;
     address: string;
-    tags?: string[];
     notes?: string;
-    lastOrderDate?: string;
 }
 
-export interface OrderStats {
-  totalOrders: number;
-  totalSpent: number;
-  activeOrders: number;
-  deliveredOrders: number;
+export type ThemeType = 'dark' | 'aurora' | 'crystal';
+
+export interface WarningRules {
+  purchaseTimeoutHours: number;
+  shippingTimeoutDays: number;
+  // Added impendingBufferHours to fix 'impendingBufferHours' does not exist in type 'WarningRules' in App.tsx
+  impendingBufferHours: number;
 }
 
 export interface SupabaseConfig {
@@ -73,19 +62,13 @@ export interface SupabaseConfig {
   key: string;
 }
 
-export interface WarningRules {
-  purchaseTimeoutHours: number;
-  shippingTimeoutDays: number;
-  impendingBufferHours: number;
-}
-
-export type ThemeType = 'dark' | 'aurora' | 'crystal';
-
 export interface AppSettings {
   cloudConfig: SupabaseConfig;
   tracking17Token: string;
   theme: ThemeType;
   warningRules: WarningRules;
+  // Added defaultExchangeRate to fix 'defaultExchangeRate' does not exist in type 'AppSettings' in App.tsx
+  defaultExchangeRate: number;
 }
 
 export type ViewState = 'dashboard' | 'list' | 'add' | 'edit' | 'customers' | 'trash';
