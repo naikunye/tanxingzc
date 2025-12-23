@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, OrderStatusCN, Customer } from '../types.ts';
 import { parseOrderText, parseOrderImage } from '../services/geminiService.ts';
-import { Wand2, Save, X, Loader2, UploadCloud, FileText, ChevronRight, Truck, ShoppingCart, Image as ImageIcon, Users, Package, MapPin, Tag, Hash, Calendar, ShoppingBag, Sparkles } from 'lucide-react';
+import { Save, X, Loader2, ChevronRight, Truck, ShoppingCart, Image as ImageIcon, Sparkles, Calendar, Box, Hash, Tag, MapPin, Package, ShoppingBag } from 'lucide-react';
 
 interface OrderFormProps {
   initialOrder?: Order | null;
@@ -105,27 +105,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-2 animate-fade-in">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-        {/* Header */}
-        <div className="px-8 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 sticky top-0 z-10">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                {initialOrder ? '编辑订单' : '录入新订单'}
-            </h2>
-            <button onClick={onCancel} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-                <X size={20} className="text-slate-500" />
-            </button>
-        </div>
-
-        <div className="p-8">
-            {/* AI Parsing Section */}
+    <div className="max-w-6xl mx-auto py-4 animate-fade-in">
+      <div className="bg-slate-900/40 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">
+        
+        <div className="p-8 space-y-12">
+            {/* AI Parsing Section - Dark Themed */}
             {!initialOrder && (
-                <div className="mb-10 bg-[#f0f4ff] dark:bg-indigo-950/20 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/50 flex flex-col md:flex-row gap-5">
+                <div className="bg-indigo-950/20 rounded-2xl p-6 border border-indigo-900/50 flex flex-col md:flex-row gap-6 shadow-inner">
                     <div className="flex-1 relative">
                         {aiImagePreview ? (
-                            <div className="h-32 bg-white dark:bg-slate-800 border rounded-xl flex items-center justify-center p-3 relative">
+                            <div className="h-32 bg-slate-950/50 border border-slate-800 rounded-xl flex items-center justify-center p-3 relative">
                                 <img src={aiImagePreview} className="h-full object-contain rounded" />
-                                <button onClick={() => setAiImagePreview(null)} className="absolute top-2 right-2 p-1.5 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors">
+                                <button onClick={() => setAiImagePreview(null)} className="absolute top-2 right-2 p-1.5 bg-red-950 text-red-400 rounded-full hover:bg-red-900 transition-colors">
                                     <X size={14} />
                                 </button>
                             </div>
@@ -134,108 +125,107 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                                 value={aiInput} 
                                 onChange={(e) => setAiInput(e.target.value)} 
                                 placeholder="粘贴订单文本或上传截图自动识别..." 
-                                className="w-full p-4 text-sm bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-700 rounded-xl h-32 resize-none focus:ring-2 focus:ring-indigo-100 outline-none" 
+                                className="w-full p-4 text-sm bg-slate-950/40 text-slate-100 placeholder-slate-600 border border-slate-800 rounded-xl h-32 resize-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 outline-none transition-all" 
                             />
                         )}
+                        {error && <p className="absolute -bottom-6 left-1 text-[10px] text-red-400 font-bold">{error}</p>}
                     </div>
-                    <div className="flex flex-col gap-3 shrink-0 md:w-36">
-                        <label className="flex-1 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-xl flex flex-col items-center justify-center cursor-pointer bg-white/80 dark:bg-slate-800/50 hover:bg-white transition-all group">
-                            <ImageIcon size={24} className="text-indigo-500 group-hover:scale-110 transition-transform" />
-                            <span className="text-xs font-bold text-indigo-600 mt-2 tracking-tight">上传截图</span>
+                    <div className="flex flex-col gap-3 shrink-0 md:w-40">
+                        <label className="flex-1 border-2 border-dashed border-slate-800 rounded-xl flex flex-col items-center justify-center cursor-pointer bg-slate-900/50 hover:bg-slate-800 transition-all group">
+                            <ImageIcon size={24} className="text-slate-500 group-hover:text-indigo-400 group-hover:scale-110 transition-all" />
+                            <span className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">上传截图</span>
                             <input type="file" className="hidden" accept="image/*" onChange={handleAiImageUpload} />
                         </label>
                         <button 
                             onClick={handleAiParse} 
                             disabled={isAiLoading || (!aiInput && !aiImagePreview)} 
-                            className="h-12 bg-indigo-500/80 text-white text-sm font-bold rounded-xl hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition-all flex items-center justify-center gap-2"
+                            className="h-12 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-indigo-900/20 transition-all flex items-center justify-center gap-2"
                         >
                             {isAiLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                            {isAiLoading ? '识别中...' : '开始识别'}
+                            {isAiLoading ? '解析中...' : '智能解析'}
                         </button>
                     </div>
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-10">
+            <form onSubmit={handleSubmit} className="space-y-12">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
                     {/* Left Column: Procurement */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 mb-6">
-                            <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                                <ShoppingCart size={18} className="text-indigo-600" />
+                    <div className="space-y-8">
+                        <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                            <div className="p-2 bg-indigo-500/10 rounded-xl">
+                                <ShoppingBag size={20} className="text-indigo-500" />
                             </div>
-                            <h3 className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">货物与采购</h3>
+                            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">采购详细信息</h3>
                         </div>
 
-                        <div className="space-y-5">
+                        <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                                    商品名称 *
-                                </label>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">商品全称 *</label>
                                 <input 
                                     type="text" 
                                     name="itemName" 
                                     value={formData.itemName} 
                                     onChange={handleChange} 
                                     required 
-                                    placeholder="输入商品名称"
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/50 outline-none text-slate-800 dark:text-white font-medium" 
+                                    placeholder="请输入采购商品名称"
+                                    className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 outline-none text-slate-100 font-medium transition-all" 
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">数量</label>
-                                    <input type="number" name="quantity" value={formData.quantity} onChange={handleChange} min="1" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl outline-none" />
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">采购数量</label>
+                                    <input type="number" name="quantity" value={formData.quantity} onChange={handleChange} min="1" className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 rounded-2xl focus:border-slate-600 outline-none text-slate-100 transition-all" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">单价 (USD)</label>
-                                    <input type="number" name="priceUSD" value={formData.priceUSD} onChange={handleChange} step="0.01" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl outline-none" />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">采购平台</label>
-                                    <input type="text" name="platform" value={formData.platform} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">平台采购跟踪号</label>
-                                    <input type="text" name="trackingNumber" value={formData.trackingNumber} onChange={handleChange} placeholder="采购平台物流面单" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl font-mono text-sm outline-none" />
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">美金单价 (USD)</label>
+                                    <input type="number" name="priceUSD" value={formData.priceUSD} onChange={handleChange} step="0.01" className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 rounded-2xl focus:border-slate-600 outline-none text-slate-100 transition-all" />
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">采购内部单号</label>
-                                <input type="text" name="clientOrderId" value={formData.clientOrderId} onChange={handleChange} placeholder="您的内部参考单号" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl font-mono text-sm outline-none text-slate-600" />
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">采购平台</label>
+                                    <input type="text" name="platform" value={formData.platform} onChange={handleChange} placeholder="如：AliExpress" className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 rounded-2xl focus:border-slate-600 outline-none text-slate-100" />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">采购跟踪号 (入库)</label>
+                                    <input type="text" name="trackingNumber" value={formData.trackingNumber} onChange={handleChange} placeholder="平台面单单号" className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 rounded-2xl font-mono text-sm outline-none text-slate-100 focus:border-slate-600" />
+                                </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">备注</label>
-                                <textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl resize-none outline-none" />
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">内部参考单号</label>
+                                <input type="text" name="clientOrderId" value={formData.clientOrderId} onChange={handleChange} placeholder="CG-XXXX-XXXX" className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 rounded-2xl font-mono text-sm outline-none text-slate-300 focus:border-slate-600" />
+                            </div>
+
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">备注信息</label>
+                                <textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} placeholder="添加额外备注..." className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 rounded-2xl resize-none outline-none text-slate-300 focus:border-slate-600" />
                             </div>
                         </div>
                     </div>
 
                     {/* Right Column: Logistics */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 mb-6">
-                            <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                <Truck size={18} className="text-blue-600" />
+                    <div className="space-y-8">
+                        <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+                            <div className="p-2 bg-blue-500/10 rounded-xl">
+                                <Truck size={20} className="text-blue-500" />
                             </div>
-                            <h3 className="text-[13px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">物流与收货</h3>
+                            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">物流与交付</h3>
                         </div>
 
-                        <div className="space-y-5">
+                        <div className="space-y-6">
                             <div>
-                                <div className="flex justify-between items-center mb-2">
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">收货地址 *</label>
-                                    <div className="relative group">
-                                        <select onChange={handleCustomerSelect} className="text-[11px] bg-slate-800 text-white rounded-md px-3 py-1.5 appearance-none pr-8 cursor-pointer hover:bg-slate-700 transition-colors font-bold border-none">
-                                            <option value="">从客户库选择...</option>
+                                <div className="flex justify-between items-center mb-2.5">
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">收货地址 *</label>
+                                    <div className="relative">
+                                        <select onChange={handleCustomerSelect} className="text-[10px] bg-slate-800 text-white rounded-lg px-3 py-1 appearance-none pr-8 cursor-pointer hover:bg-slate-700 transition-colors font-bold border-none outline-none ring-1 ring-slate-700">
+                                            <option value="">快速选择客户...</option>
                                             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                         </select>
-                                        <ChevronRight size={14} className="absolute right-2 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none opacity-50 text-white" />
+                                        <ChevronRight size={12} className="absolute right-2 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none opacity-50" />
                                     </div>
                                 </div>
                                 <textarea 
@@ -244,63 +234,64 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                                     onChange={handleChange} 
                                     rows={5} 
                                     required 
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl resize-none outline-none focus:ring-2 focus:ring-indigo-400" 
+                                    placeholder="姓名, 电话, 地址..."
+                                    className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 text-slate-100 rounded-2xl resize-none outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all" 
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">订单状态</label>
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">当前订单状态</label>
                                     <div className="relative">
-                                        <select name="status" value={formData.status} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl appearance-none outline-none font-medium">
-                                            {Object.values(OrderStatus).map(s => <option key={s} value={s}>{OrderStatusCN[s]}</option>)}
+                                        <select name="status" value={formData.status} onChange={handleChange} className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 rounded-2xl appearance-none outline-none font-bold text-slate-100 focus:border-slate-600 transition-all">
+                                            {Object.values(OrderStatus).map(s => <option key={s} value={s} className="bg-slate-900">{OrderStatusCN[s]}</option>)}
                                         </select>
-                                        <ChevronRight size={16} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none text-slate-400" />
+                                        <ChevronRight size={18} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none text-slate-600" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">采购日期</label>
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">采购日期</label>
                                     <div className="relative">
-                                        <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl outline-none font-medium" />
-                                        <Calendar size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
+                                        <input type="date" name="purchaseDate" value={formData.purchaseDate} onChange={handleChange} className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 rounded-2xl outline-none font-bold text-slate-100 focus:border-slate-600" />
+                                        <Calendar size={18} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600" />
                                     </div>
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">商家自发货单号</label>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">商家自发货单号 (补录)</label>
                                 <input 
                                     type="text" 
                                     name="supplierTrackingNumber" 
                                     value={formData.supplierTrackingNumber} 
                                     onChange={handleChange} 
-                                    placeholder="商家自发货物流面单" 
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl font-mono text-sm outline-none focus:ring-2 focus:ring-indigo-400 placeholder-slate-400" 
+                                    placeholder="商家提供的物流单号" 
+                                    className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 text-slate-100 rounded-2xl font-mono text-sm outline-none focus:border-blue-500/50 placeholder-slate-700" 
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">平台单号 (TikTok)</label>
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5 ml-1">TikTok 平台单号</label>
                                 <input 
                                     type="text" 
                                     name="platformOrderId" 
                                     value={formData.platformOrderId} 
                                     onChange={handleChange} 
-                                    placeholder="TikTok 订单 ID" 
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl font-mono text-sm outline-none focus:ring-2 focus:ring-indigo-400 placeholder-slate-400" 
+                                    placeholder="57832XXXXXXXXXXX" 
+                                    className="w-full px-5 py-4 bg-slate-950/30 border border-slate-800 text-slate-100 rounded-2xl font-mono text-sm outline-none focus:border-blue-500/50 placeholder-slate-700" 
                                 />
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-4 border-t border-slate-100 dark:border-slate-800 pt-10">
-                    <button type="button" onClick={onCancel} className="px-8 py-3 text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all">
-                        取消
+                <div className="flex justify-end gap-5 border-t border-slate-800 pt-10">
+                    <button type="button" onClick={onCancel} className="px-10 py-4 text-xs font-bold text-slate-500 hover:text-slate-200 transition-all uppercase tracking-widest">
+                        放弃修改
                     </button>
-                    <button type="submit" className="px-12 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-bold text-sm shadow-xl shadow-indigo-200 dark:shadow-none transition-all flex items-center gap-2">
+                    <button type="submit" className="px-14 py-4 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-500 font-bold text-sm shadow-xl shadow-indigo-900/40 transition-all flex items-center gap-3">
                         <Save size={18} />
-                        保存订单
+                        保存并同步云端
                     </button>
                 </div>
             </form>

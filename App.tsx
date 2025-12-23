@@ -19,8 +19,6 @@ const DEFAULT_WARNING_RULES: WarningRules = {
     impendingBufferHours: 24
 };
 
-const INIT_SQL = `-- 1. 创建订单表\ncreate table if not exists public.orders (\n  id text primary key,\n  order_data jsonb not null,\n  created_at timestamp with time zone default timezone('utc'::text, now()) not null,\n  updated_at timestamp with time zone default timezone('utc'::text, now()) not null\n);\n\n-- 2. 创建客户表\ncreate table if not exists public.customers (\n  id text primary key,\n  customer_data jsonb not null,\n  created_at timestamp with time zone default timezone('utc'::text, now()) not null,\n  updated_at timestamp with time zone default timezone('utc'::text, now()) not null\n);`;
-
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('dashboard');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -35,7 +33,7 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({
     cloudConfig: { url: '', key: '' },
     tracking17Token: '',
-    theme: 'light',
+    theme: 'dark', // 默认深色，符合截图
     warningRules: DEFAULT_WARNING_RULES
   });
   
@@ -43,10 +41,6 @@ const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
-  const [copySuccess, setCopySuccess] = useState(false);
-  const [showSqlHelp, setShowSqlHelp] = useState(false);
-  
-  const backupInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const savedSettings = localStorage.getItem(SETTINGS_KEY);
@@ -57,7 +51,7 @@ const App: React.FC = () => {
         const currentSettings: AppSettings = {
             cloudConfig: config.url ? config : { url: '', key: '' },
             tracking17Token: parsed.tracking17Token || '',
-            theme: parsed.theme || 'light',
+            theme: parsed.theme || 'dark',
             warningRules: { ...DEFAULT_WARNING_RULES, ...parsed.warningRules }
         };
         setSettings(currentSettings);
@@ -65,7 +59,10 @@ const App: React.FC = () => {
         if (config.url && config.url.startsWith('http') && config.key) { connectToCloud(config); } 
         else { loadLocalData(); }
       } catch (e) { loadLocalData(); }
-    } else { loadLocalData(); }
+    } else { 
+        loadLocalData();
+        applyTheme('dark');
+    }
   }, []);
 
   const applyTheme = (theme: 'light' | 'dark') => {
@@ -108,7 +105,6 @@ const App: React.FC = () => {
         setCustomers(cloudCustomers);
         setIsCloudMode(true);
         showToast('云端数据同步成功', 'success');
-        setShowSettings(false);
       } catch (e: any) {
         setIsCloudMode(false);
         showToast("连接失败: " + (e.message || '未知错误'), 'error');
@@ -158,13 +154,7 @@ const App: React.FC = () => {
     setCustomers(newCustomers);
     localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(newCustomers));
     showToast('客户信息已保存', 'success');
-    if (isCloudMode) {
-      try {
-        await saveCloudCustomer(customer);
-      } catch (e) {
-        showToast("同步客户失败", 'error');
-      }
-    }
+    if (isCloudMode) { try { await saveCloudCustomer(customer); } catch (e) { showToast("同步客户失败", 'error'); } }
   };
 
   const handleDeleteCustomer = async (id: string) => {
@@ -173,13 +163,7 @@ const App: React.FC = () => {
         setCustomers(newCustomers);
         localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(newCustomers));
         showToast('客户已删除', 'info');
-        if (isCloudMode) {
-          try {
-            await deleteCloudCustomer(id);
-          } catch (e) {
-            showToast("同步删除失败", 'error');
-          }
-        }
+        if (isCloudMode) { try { await deleteCloudCustomer(id); } catch (e) { showToast("同步删除失败", 'error'); } }
     }
   };
 
@@ -213,22 +197,22 @@ const App: React.FC = () => {
       }}
       className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
         view === target || (target === 'edit' && view === 'edit') || (target === 'add' && view === 'add')
-          ? 'bg-slate-900 text-white shadow-lg'
-          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+          ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-lg'
+          : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
       }`}
     >
       <div className="flex items-center gap-3">
         <Icon size={18} className={`${view === target ? 'text-indigo-400' : ''}`} />
         <span className="font-bold text-sm">{label}</span>
       </div>
-      {count !== undefined && count > 0 && <span className="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-bold">{count}</span>}
+      {count !== undefined && count > 0 && <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">{count}</span>}
     </button>
   );
 
   const PurchaseLink = ({ href, label, sub }: { href: string, label: string, sub: string }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-all group">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-indigo-600 transition-all group">
         <div className="flex items-center gap-3">
-             <div className="w-5 h-5 bg-white rounded-full p-0.5 border border-slate-100 shadow-sm flex items-center justify-center">
+             <div className="w-5 h-5 bg-white rounded-full p-0.5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-center">
                  <img src={`https://www.google.com/s2/favicons?domain=${sub}&sz=32`} alt="icon" className="w-full h-full object-contain" />
              </div>
              <div className="flex flex-col items-start">
@@ -243,7 +227,6 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 flex flex-col md:flex-row font-sans text-slate-800 dark:text-slate-100">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      <input type="file" ref={backupInputRef} style={{ display: 'none' }} accept=".json" onChange={(e) => {}} />
 
       {isMobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
 
@@ -266,7 +249,6 @@ const App: React.FC = () => {
           
           <div className="pt-8 pb-4">
             <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">快捷操作</p>
-            {/* New Order Button Area - Fully Matching Design */}
             <div className="mx-2 px-1 py-1 rounded-2xl border-2 border-dashed border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20">
                 <button
                     onClick={() => { setEditingOrder(null); setView('add'); setIsMobileMenuOpen(false); }}
@@ -289,16 +271,12 @@ const App: React.FC = () => {
               <PurchaseLink href="https://www.shein.com" label="Shein 希音" sub="shein.com" />
               <PurchaseLink href="https://www.amazon.com" label="Amazon 亚马逊" sub="amazon.com" />
               <PurchaseLink href="https://www.ebay.com" label="eBay 易贝" sub="ebay.com" />
-              <PurchaseLink href="https://www.walmart.com" label="Walmart 沃尔玛" sub="walmart.com" />
-              <PurchaseLink href="https://www.costco.com" label="Costco 开市客" sub="costco.com" />
-              <PurchaseLink href="https://www.target.com" label="Target 塔吉特" sub="target.com" />
-              <PurchaseLink href="https://www.bestbuy.com" label="Best Buy 百思买" sub="bestbuy.com" />
             </div>
           </div>
         </nav>
 
         <div className="p-6 border-t border-slate-100 dark:border-slate-800 shrink-0">
-             <button onClick={() => setShowSettings(true)} className={`w-full mb-4 px-4 py-3 rounded-xl border flex items-center gap-3 ${isCloudMode ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+             <button onClick={() => setShowSettings(true)} className={`w-full px-4 py-3 rounded-xl border flex items-center gap-3 transition-colors ${isCloudMode ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'}`}>
                 {isCloudMode ? <Cloud size={18} /> : <Database size={18} />}
                 <div className="text-left flex-1"><p className="text-xs font-bold">{isCloudMode ? '云端已同步' : '本地模式'}</p></div>
                 <Settings size={14} className="opacity-50" />
@@ -306,16 +284,19 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto bg-[#f8fafc] dark:bg-slate-950">
-        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-5 sticky top-0 z-20 flex justify-between items-center">
+      <main className="flex-1 overflow-auto bg-[#f8fafc] dark:bg-[#020617]">
+        {/* Updated Header for consistent system look */}
+        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-8 py-5 sticky top-0 z-20 flex justify-between items-center">
             <div className="flex items-center gap-4">
-                <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-slate-600"><Menu size={24} /></button>
-                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                    {view === 'add' || view === 'edit' ? '录入新订单' : view === 'list' ? '订单管理' : view === 'customers' ? '客户管理' : view === 'trash' ? '回收站' : '数据概览'}
+                <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-slate-600 dark:text-slate-400"><Menu size={24} /></button>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    {view === 'add' || view === 'edit' ? (editingOrder ? '编辑订单' : '录入新订单') : view === 'list' ? '订单管理' : view === 'customers' ? '客户管理' : view === 'trash' ? '回收站' : '数据概览'}
                 </h2>
             </div>
             <div className="flex items-center gap-4">
-                <button onClick={toggleTheme} className="p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">{settings.theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}</button>
+                <button onClick={toggleTheme} className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                    {settings.theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                </button>
             </div>
         </header>
         <div className="p-4 md:p-8">
