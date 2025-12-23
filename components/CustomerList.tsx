@@ -43,7 +43,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingCustomer.name || !editingCustomer.address) {
-        alert('Name and Address are required');
+        alert('请填写合伙人姓名和地址');
         return;
     }
     onSave(editingCustomer as Customer);
@@ -56,11 +56,10 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
       onDelete(id);
   }
 
-  // Import/Export Handlers
   const handleExport = () => {
-      const headers = ['ID', '客户名称', '电话', '地址', '备注'];
+      const headers = ['ID', '合伙人姓名', '联系电话', '收货地址', '备注'];
       const keys = ['id', 'name', 'phone', 'address', 'notes'];
-      const filename = `客户列表导出_${new Date().toISOString().split('T')[0]}.csv`;
+      const filename = `探行科技_合伙人列表_${new Date().toISOString().split('T')[0]}.csv`;
       exportToCSV(customers, headers, keys, filename);
   };
 
@@ -78,7 +77,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
               const data = await parseCSV(file);
               onImport(data);
           } catch (error) {
-              alert('CSV parsing failed. Please check the file format.');
+              alert('CSV 解析失败，请检查文件格式是否正确。');
               console.error(error);
           }
       }
@@ -86,56 +85,60 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
 
   if (isEditing) {
       return (
-          <div className="max-w-2xl mx-auto bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 animate-fade-in">
-              <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">{editingCustomer.id ? '编辑客户' : '新增客户'}</h2>
-                  <button onClick={() => setIsEditing(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500">
-                      <X size={20} />
+          <div className="max-w-2xl mx-auto premium-glass rounded-[2rem] border border-white/10 p-10 animate-fade-in premium-shadow">
+              <div className="flex justify-between items-center mb-8">
+                  <h2 className="text-xl font-display font-bold text-white">{editingCustomer.id && customers.some(c => c.id === editingCustomer.id) ? '编辑合伙人信息' : '录入新合伙人'}</h2>
+                  <button onClick={() => setIsEditing(false)} className="p-2 hover:bg-white/10 rounded-full text-slate-500 transition-colors">
+                      <X size={24} />
                   </button>
               </div>
-              <form onSubmit={handleSave} className="space-y-4">
+              <form onSubmit={handleSave} className="space-y-6">
                   <div>
-                      <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">客户名称 *</label>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">合伙人/客户姓名 *</label>
                       <input 
                           type="text" 
                           value={editingCustomer.name || ''} 
                           onChange={e => setEditingCustomer({...editingCustomer, name: e.target.value})}
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                          className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl focus:border-indigo-500 outline-none text-white font-medium transition-all"
+                          placeholder="输入姓名"
                           required
                       />
                   </div>
                   <div>
-                      <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">联系电话</label>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">联系电话</label>
                       <input 
                           type="text" 
                           value={editingCustomer.phone || ''} 
                           onChange={e => setEditingCustomer({...editingCustomer, phone: e.target.value})}
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                          className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl focus:border-indigo-500 outline-none text-white font-medium transition-all"
+                          placeholder="输入联系电话"
                       />
                   </div>
                   <div>
-                      <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">收货地址 *</label>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">固定收货地址 *</label>
                       <textarea 
                           value={editingCustomer.address || ''} 
                           onChange={e => setEditingCustomer({...editingCustomer, address: e.target.value})}
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                          className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl focus:border-indigo-500 outline-none text-white font-medium transition-all resize-none"
                           rows={3}
+                          placeholder="输入详细的收货地址"
                           required
                       />
                   </div>
                    <div>
-                      <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">备注</label>
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">备注说明</label>
                       <input 
                           type="text" 
                           value={editingCustomer.notes || ''} 
                           onChange={e => setEditingCustomer({...editingCustomer, notes: e.target.value})}
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                          className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl focus:border-indigo-500 outline-none text-white font-medium transition-all"
+                          placeholder="额外说明信息..."
                       />
                   </div>
-                  <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
-                      <button type="button" onClick={() => setIsEditing(false)} className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg font-medium transition-colors">取消</button>
-                      <button type="submit" className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors flex items-center gap-2">
-                        <Save size={16} /> 保存
+                  <div className="flex justify-end gap-4 pt-6 mt-4">
+                      <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-3 text-slate-500 hover:text-slate-300 font-bold text-xs uppercase tracking-widest transition-colors">取消</button>
+                      <button type="submit" className="px-10 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 font-bold text-sm shadow-xl shadow-indigo-500/20 transition-all flex items-center gap-2">
+                        <Save size={18} /> 保存合伙人
                       </button>
                   </div>
               </form>
@@ -144,7 +147,7 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-8 animate-fade-in">
         <input 
             type="file" 
             ref={fileInputRef} 
@@ -153,64 +156,66 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
             onChange={handleFileChange} 
         />
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-             <div className="relative w-full md:max-w-md group">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500" size={16} />
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+             <div className="relative w-full md:max-w-xl group">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-500" size={18} />
                 <input
                     type="text"
-                    placeholder="搜索客户姓名、电话或地址..."
+                    placeholder="搜索合伙人姓名、电话或地址..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none text-slate-900 dark:text-white"
+                    className="w-full pl-14 pr-6 py-4.5 text-sm premium-glass rounded-2xl border-white/5 focus:border-indigo-500/30 outline-none text-white"
                 />
             </div>
-            <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="flex items-center gap-4 w-full md:w-auto">
                 {onImport && (
-                    <button onClick={handleImportClick} className="px-3 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-2 border border-slate-200 dark:border-slate-700">
+                    <button onClick={handleImportClick} className="px-5 py-4 premium-glass border-white/5 text-slate-400 hover:text-white rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all">
                         <Upload size={16} />
-                        导入
+                        批量导入
                     </button>
                 )}
-                <button onClick={handleExport} className="px-3 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-sm font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-2 border border-emerald-200 dark:border-emerald-800">
+                <button onClick={handleExport} className="px-5 py-4 premium-glass border-white/5 text-emerald-400 hover:text-emerald-300 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2.5 transition-all">
                     <Download size={16} />
-                    导出
+                    导出数据
                 </button>
-                <button onClick={handleAdd} className="w-full md:w-auto px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 flex items-center justify-center gap-2 transition-colors">
-                    <Plus size={18} />
-                    新增客户
+                <button onClick={handleAdd} className="w-full md:w-auto px-8 py-4 bg-white text-indigo-950 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-50 shadow-2xl transition-all flex items-center justify-center gap-3">
+                    <Plus size={20} strokeWidth={3} />
+                    新增合伙人
                 </button>
             </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredCustomers.map(customer => (
-                <div key={customer.id} onClick={() => handleEdit(customer)} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer group relative">
-                     <div className="flex justify-between items-start mb-3">
-                         <div className="flex items-center gap-3">
-                             <div className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg border border-indigo-100 dark:border-indigo-800">
+                <div key={customer.id} onClick={() => handleEdit(customer)} className="group bg-white/5 premium-glass rounded-[2.5rem] border border-white/5 p-8 hover:border-indigo-500/20 transition-all cursor-pointer relative overflow-hidden">
+                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[50px] -z-10 group-hover:bg-indigo-500/10 transition-colors" />
+                     
+                     <div className="flex justify-between items-start mb-6">
+                         <div className="flex items-center gap-4">
+                             <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-display font-black text-xl border border-indigo-500/20 shadow-xl group-hover:rotate-6 transition-transform">
                                  {customer.name.charAt(0)}
                              </div>
                              <div>
-                                 <h3 className="font-bold text-slate-900 dark:text-white">{customer.name}</h3>
-                                 <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                     <Phone size={10} />
-                                     {customer.phone || '无电话'}
+                                 <h3 className="font-display font-bold text-lg text-white group-hover:text-indigo-400 transition-colors">{customer.name}</h3>
+                                 <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 tracking-tight mt-1">
+                                     <Phone size={12} className="text-slate-600" />
+                                     {customer.phone || '未录入联系方式'}
                                  </div>
                              </div>
                          </div>
-                         <button onClick={(e) => handleDelete(customer.id, e)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors">
-                             <Trash2 size={16} />
+                         <button onClick={(e) => handleDelete(customer.id, e)} className="p-3 text-slate-700 hover:text-red-500 bg-white/5 hover:bg-red-500/10 rounded-xl transition-all">
+                             <Trash2 size={18} />
                          </button>
                      </div>
                      
-                     <div className="space-y-2 mt-4">
-                         <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 p-2 rounded border border-slate-100 dark:border-slate-700">
-                             <MapPin size={14} className="shrink-0 mt-0.5 text-indigo-400" />
-                             <span className="line-clamp-2">{customer.address}</span>
+                     <div className="space-y-3 mt-8">
+                         <div className="flex items-start gap-3 text-xs text-slate-400 bg-white/5 p-4 rounded-2xl border border-white/5">
+                             <MapPin size={16} className="shrink-0 mt-0.5 text-indigo-500/60" />
+                             <span className="leading-relaxed line-clamp-2">{customer.address}</span>
                          </div>
                          {customer.notes && (
-                            <div className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                                <span className="w-1 h-1 bg-amber-500 rounded-full"></span>
+                            <div className="px-4 py-2 rounded-xl bg-amber-500/5 border border-amber-500/10 text-[10px] text-amber-500/80 font-bold flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></div>
                                 {customer.notes}
                             </div>
                          )}
@@ -218,9 +223,10 @@ export const CustomerList: React.FC<CustomerListProps> = ({ customers, onSave, o
                 </div>
             ))}
              {filteredCustomers.length === 0 && (
-                <div className="col-span-full text-center py-12 text-slate-400 dark:text-slate-600">
-                    <User size={48} className="mx-auto mb-2 opacity-20" />
-                    <p>没有找到相关客户</p>
+                <div className="col-span-full py-32 flex flex-col items-center justify-center premium-glass rounded-[3rem] border-white/5">
+                    <User size={48} className="text-slate-800 mb-6 opacity-40" />
+                    <h3 className="text-xl font-display font-bold text-slate-500">未找到相关合伙人</h3>
+                    <p className="text-xs text-slate-600 mt-2 uppercase tracking-widest">请尝试调整搜索关键词</p>
                 </div>
             )}
         </div>

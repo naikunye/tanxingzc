@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, OrderStatusCN, Customer } from '../types';
 import { parseOrderText, parseOrderImage } from '../services/geminiService';
@@ -73,7 +74,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
         setAiImagePreview(null);
         setAiInput('');
       } else { setError('未能识别有效信息'); }
-    } catch (err) { setError('识别失败'); } finally { setIsAiLoading(false); }
+    } catch (err) { setError('智能识别失败，请检查输入内容'); } finally { setIsAiLoading(false); }
   };
 
   const handleCustomerSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -113,7 +114,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                     <div className="flex-1 relative">
                         {aiImagePreview ? (
                             <div className="h-32 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center p-3 relative">
-                                <img src={aiImagePreview} className="h-full object-contain rounded" alt="AI Preview" />
+                                <img src={aiImagePreview} className="h-full object-contain rounded" alt="AI 预览" />
                                 <button onClick={() => setAiImagePreview(null)} className="absolute top-2 right-2 p-1.5 bg-red-900/80 text-white rounded-full hover:bg-red-800 transition-colors">
                                     <X size={14} />
                                 </button>
@@ -122,7 +123,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                             <textarea 
                                 value={aiInput} 
                                 onChange={(e) => setAiInput(e.target.value)} 
-                                placeholder="粘贴订单文本或上传截图自动识别..." 
+                                placeholder="在这里粘贴订单文本（或上传截图）即可实现 AI 自动解析识别..." 
                                 className="w-full p-4 text-sm bg-slate-950/40 text-slate-100 placeholder-slate-600 border border-slate-800 rounded-xl h-32 resize-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all" 
                             />
                         )}
@@ -166,7 +167,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                                     value={formData.itemName} 
                                     onChange={handleChange} 
                                     required 
-                                    placeholder="输入商品全称"
+                                    placeholder="输入采购商品全称"
                                     className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl focus:border-indigo-500 outline-none text-slate-100 font-medium transition-all" 
                                 />
                             </div>
@@ -185,22 +186,22 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                             <div className="grid grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">采购平台</label>
-                                    <input type="text" name="platform" value={formData.platform} onChange={handleChange} placeholder="如: AliExpress" className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl text-slate-100 outline-none" />
+                                    <input type="text" name="platform" value={formData.platform} onChange={handleChange} placeholder="如: AliExpress, 1688" className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl text-slate-100 outline-none" />
                                 </div>
                                 <div>
-                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">平台采购跟踪号</label>
-                                    <input type="text" name="trackingNumber" value={formData.trackingNumber} onChange={handleChange} className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl font-mono text-sm text-slate-100 outline-none" />
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">平台物流追踪号</label>
+                                    <input type="text" name="trackingNumber" value={formData.trackingNumber} onChange={handleChange} placeholder="采购网站物流单号" className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl font-mono text-sm text-slate-100 outline-none" />
                                 </div>
                             </div>
 
                             <div>
                                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">采购内部单号</label>
-                                <input type="text" name="clientOrderId" value={formData.clientOrderId} onChange={handleChange} placeholder="CG-XXXX" className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl font-mono text-sm text-indigo-400 outline-none" />
+                                <input type="text" name="clientOrderId" value={formData.clientOrderId} onChange={handleChange} placeholder="输入您的内部流水号 (如: CG-001)" className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl font-mono text-sm text-indigo-400 outline-none" />
                             </div>
 
                             <div>
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">备注</label>
-                                <textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl resize-none outline-none text-slate-300" />
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">备注信息</label>
+                                <textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} placeholder="添加相关备注说明..." className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl resize-none outline-none text-slate-300" />
                             </div>
                         </div>
                     </div>
@@ -210,15 +211,15 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                             <div className="p-2 bg-blue-500/10 rounded-xl">
                                 <Truck size={20} className="text-blue-500" />
                             </div>
-                            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">收货物流信息</h3>
+                            <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">收货与物流信息</h3>
                         </div>
 
                         <div className="space-y-6">
                             <div>
                                 <div className="flex justify-between items-center mb-2.5">
-                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">收货地址 *</label>
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">客户收货地址 *</label>
                                     <select onChange={handleCustomerSelect} className="text-[10px] bg-slate-800 text-slate-100 rounded-lg px-2 py-1 appearance-none border-none outline-none ring-1 ring-slate-700">
-                                        <option value="">快速选择客户...</option>
+                                        <option value="">快速从合伙人列表中选择...</option>
                                         {customers.map(c => <option key={c.id} value={c.id} className="bg-slate-900">{c.name}</option>)}
                                     </select>
                                 </div>
@@ -228,13 +229,14 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                                     onChange={handleChange} 
                                     rows={5} 
                                     required 
+                                    placeholder="输入完整的收货人姓名、电话及详细地址"
                                     className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 text-slate-100 rounded-2xl resize-none outline-none focus:border-blue-500 transition-all" 
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">订单状态</label>
+                                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">订单当前状态</label>
                                     <select name="status" value={formData.status} onChange={handleChange} className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 rounded-2xl text-slate-100 outline-none font-bold appearance-none">
                                         {Object.values(OrderStatus).map(s => <option key={s} value={s} className="bg-slate-900">{OrderStatusCN[s]}</option>)}
                                     </select>
@@ -246,23 +248,23 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                             </div>
 
                             <div>
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">商家自发货单号</label>
-                                <input type="text" name="supplierTrackingNumber" value={formData.supplierTrackingNumber} onChange={handleChange} placeholder="物流单号" className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 text-slate-100 rounded-2xl font-mono text-sm outline-none" />
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">国际转运/自发货单号</label>
+                                <input type="text" name="supplierTrackingNumber" value={formData.supplierTrackingNumber} onChange={handleChange} placeholder="输入用于给买家追踪的物流单号" className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 text-slate-100 rounded-2xl font-mono text-sm outline-none" />
                             </div>
 
                             <div>
-                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">TikTok 平台单号</label>
-                                <input type="text" name="platformOrderId" value={formData.platformOrderId} onChange={handleChange} className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 text-slate-100 rounded-2xl font-mono text-sm outline-none" />
+                                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2.5">外部交易平台单号</label>
+                                <input type="text" name="platformOrderId" value={formData.platformOrderId} onChange={handleChange} placeholder="如 TikTok / Amazon 订单号" className="w-full px-5 py-4 bg-slate-950/40 border border-slate-800 text-slate-100 rounded-2xl font-mono text-sm outline-none" />
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex justify-end gap-6 border-t border-slate-800 pt-10">
-                    <button type="button" onClick={onCancel} className="px-8 py-4 text-xs font-bold text-slate-500 hover:text-slate-200 transition-all uppercase tracking-widest">取消</button>
+                    <button type="button" onClick={onCancel} className="px-8 py-4 text-xs font-bold text-slate-500 hover:text-slate-200 transition-all uppercase tracking-widest">放弃更改</button>
                     <button type="submit" className="px-14 py-4 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-500 font-bold text-sm shadow-xl shadow-indigo-500/20 transition-all flex items-center gap-3">
                         <Save size={18} />
-                        保存并同步
+                        保存项目并同步
                     </button>
                 </div>
             </form>

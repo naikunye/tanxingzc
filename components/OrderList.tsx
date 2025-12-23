@@ -19,7 +19,6 @@ interface OrderListProps {
 export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onRestore, onSync, isSyncing, initialFilter = 'All', isTrash = false, warningRules }) => {
   const [filter, setFilter] = useState<OrderStatus | 'All' | 'delayed'>(initialFilter);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setFilter(initialFilter);
@@ -78,7 +77,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-indigo-500" size={18} />
             <input 
               type="text" 
-              placeholder="通过单号、关键词、备注或地址搜索您的资产..." 
+              placeholder="通过单号、关键词、备注或地址搜索您的项目资产..." 
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)} 
               className="w-full pl-14 pr-6 py-4.5 text-sm premium-glass rounded-2xl border-white/5 focus:border-indigo-500/30 outline-none transition-all placeholder:text-slate-600 text-slate-200" 
@@ -98,7 +97,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                  ))}
               </div>
             )}
-            <button onClick={onSync} disabled={isSyncing} className="p-4 premium-glass border-white/5 rounded-2xl text-indigo-400 hover:text-indigo-300 transition-all hover:scale-110 active:scale-95">
+            <button onClick={onSync} disabled={isSyncing} title="同步物流状态" className="p-4 premium-glass border-white/5 rounded-2xl text-indigo-400 hover:text-indigo-300 transition-all hover:scale-110 active:scale-95">
                 {isSyncing ? <Clock size={18} className="animate-spin" /> : <CloudLightning size={18} />}
             </button>
         </div>
@@ -143,7 +142,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                           </div>
                           <div className="flex items-center gap-1.5 text-slate-500">
                             <Hash size={12} />
-                            <span>{order.clientOrderId || '未指定内部号'}</span>
+                            <span>{order.clientOrderId || '未分配内部号'}</span>
                           </div>
                           <div className="flex items-center gap-1.5 text-slate-500">
                             <ShoppingBag size={12} />
@@ -159,9 +158,9 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                       )}
                   </div>
 
-                  {/* 收货地址 (高端系统注重买家) */}
+                  {/* 收货地址 */}
                   <div className="w-full lg:w-64 px-6 py-4 rounded-3xl bg-white/5 border border-white/5 flex flex-col gap-1">
-                      <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1">Destination</p>
+                      <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1">收货目的地</p>
                       <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2" title={order.buyerAddress}>
                         {order.buyerAddress}
                       </p>
@@ -170,11 +169,11 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                   {/* 物流链路 */}
                   <div className="w-full lg:w-48 flex flex-col gap-2 items-center lg:items-end">
                       <div className="flex flex-col gap-1 items-center lg:items-end">
-                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Procure Track</p>
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">采购物流追踪</p>
                           <TrackLink num={order.trackingNumber} />
                       </div>
                       <div className="flex flex-col gap-1 items-center lg:items-end">
-                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Delivery Info</p>
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">国际转运单号</p>
                           {order.supplierTrackingNumber ? (
                               <TrackLink num={order.supplierTrackingNumber} />
                           ) : (
@@ -189,6 +188,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                         <button 
                           onClick={(e) => { e.stopPropagation(); onRestore?.(order.id); }} 
                           className="w-10 h-10 flex items-center justify-center bg-emerald-500/10 text-emerald-400 rounded-2xl hover:bg-emerald-500/20 transition-colors"
+                          title="还原项目"
                         >
                           <Clock size={18} />
                         </button>
@@ -218,7 +218,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                     <Box size={32} className="text-slate-700" />
                 </div>
                 <h3 className="text-xl font-display font-bold text-slate-500">空空如也</h3>
-                <p className="text-xs text-slate-600 mt-2">没有找到任何活跃的项目订单</p>
+                <p className="text-xs text-slate-600 mt-2">在该分类下未找到任何项目订单</p>
             </div>
           )}
       </div>
