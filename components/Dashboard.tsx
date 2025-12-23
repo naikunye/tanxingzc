@@ -12,7 +12,7 @@ import {
   Cell,
   Label
 } from 'recharts';
-import { Order, OrderStatus, OrderStatusCN, WarningRules } from '../types.ts';
+import { Order, OrderStatus, OrderStatusCN, WarningRules } from '../types';
 import { DollarSign, Clock, AlertTriangle, Hourglass, CheckCircle2, Plane, AlertCircle, Warehouse, ShoppingCart, Archive, Home, Truck, ShoppingBag } from 'lucide-react';
 
 interface DashboardProps {
@@ -22,19 +22,18 @@ interface DashboardProps {
 }
 
 const CHART_COLORS = [
-  '#6366f1', // Indigo
-  '#8b5cf6', // Violet
-  '#d946ef', // Fuchsia
-  '#f43f5e', // Rose
-  '#f97316', // Orange
-  '#eab308', // Yellow
-  '#22c55e', // Green
-  '#14b8a6', // Teal
-  '#06b6d4', // Cyan
-  '#3b82f6', // Blue
+  '#6366f1', 
+  '#8b5cf6', 
+  '#d946ef', 
+  '#f43f5e', 
+  '#f97316', 
+  '#eab308', 
+  '#22c55e', 
+  '#14b8a6', 
+  '#06b6d4', 
+  '#3b82f6', 
 ];
 
-// Helper to determine order health
 type HealthStatus = 'normal' | 'impending' | 'overdue';
 
 export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNavigate }) => {
@@ -43,7 +42,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
   const ONE_DAY = ONE_HOUR * 24;
 
   const getOrderHealth = (order: Order): { status: HealthStatus, msg: string, timeLeftHours: number } => {
-      // 1. Check Purchase Health
       if (order.status === OrderStatus.PURCHASED) {
           const purchaseTime = new Date(order.purchaseDate).getTime();
           const elapsedHours = (now - purchaseTime) / ONE_HOUR;
@@ -56,9 +54,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
           }
       }
 
-      // 2. Check Shipping Health
       if (order.status === OrderStatus.SHIPPED) {
-          // Fallback to purchaseDate if lastUpdated is missing (though it shouldn't be for shipped items)
           const refTime = new Date(order.lastUpdated || order.purchaseDate).getTime();
           const elapsedDays = (now - refTime) / ONE_DAY;
           const limitDays = warningRules.shippingTimeoutDays;
@@ -66,7 +62,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
           if (elapsedDays > limitDays) {
               return { status: 'overdue', msg: `物流超时 ${Math.floor(elapsedDays - limitDays)}天`, timeLeftHours: 0 };
           } else if (elapsedDays > (limitDays - (warningRules.impendingBufferHours / 24))) {
-              // Convert buffer hours to days for comparison
               return { status: 'impending', msg: `即将超时 (未签收)`, timeLeftHours: 0 };
           }
       }
@@ -74,11 +69,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
       return { status: 'normal', msg: '正常', timeLeftHours: 0 };
   };
 
-  // Group Orders by Warning Status
   const warningList = orders.map(o => ({ ...o, health: getOrderHealth(o) }))
                             .filter(o => o.health.status !== 'normal')
                             .sort((a, b) => {
-                                // Sort Order: Overdue first, then Impending. Within category, worst first.
                                 if (a.health.status !== b.health.status) {
                                     return a.health.status === 'overdue' ? -1 : 1;
                                 }
@@ -100,7 +93,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
     value: orders.filter(o => o.status === status).length
   })).filter(d => d.value > 0);
 
-  // Platform Data Calculation (Top 8)
   const platformCounts: Record<string, number> = {};
   orders.forEach(o => {
       const p = o.platform || '其他';
@@ -112,28 +104,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
       value: platformCounts[key]
   })).sort((a, b) => b.value - a.value).slice(0, 8);
 
-  // --- New Logic for Split Logistics Flows ---
-
-  // 1. Inbound Flow (Procurement -> Warehouse)
   const inboundData = {
       toBuy: orders.filter(o => o.status === OrderStatus.PENDING).length,
       purchased: orders.filter(o => o.status === OrderStatus.PURCHASED && !o.supplierTrackingNumber).length,
       supplierTransit: orders.filter(o => 
-          // Has supplier tracking but not yet arrived (Ready to Ship)
           (o.status === OrderStatus.PURCHASED || o.status === OrderStatus.PENDING) && !!o.supplierTrackingNumber
       ).length,
       arrived: orders.filter(o => o.status === OrderStatus.READY_TO_SHIP).length
   };
 
-  // 2. Outbound Flow (Warehouse -> Customer)
   const outboundData = {
-      ready: orders.filter(o => o.status === OrderStatus.READY_TO_SHIP).length, // Shared node (End of Inbound, Start of Outbound)
+      ready: orders.filter(o => o.status === OrderStatus.READY_TO_SHIP).length,
       inTransit: orders.filter(o => o.status === OrderStatus.SHIPPED && (!o.detailedStatus || ['运输中', '已发货', '已揽收'].includes(o.detailedStatus))).length,
       deliveryIssue: orders.filter(o => o.status === OrderStatus.SHIPPED && ['投递失败/待取', '到达待取', '运输异常', '运输过久'].includes(o.detailedStatus || '')).length,
       delivered: orders.filter(o => o.status === OrderStatus.DELIVERED).length
   };
 
-  // Custom Tooltip Component
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -189,15 +175,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
     );
   };
 
-  // Reusable Flow Component
   const LogisticsFlow = ({ title, steps, colorClass, lineColor }: { title: string, steps: any[], colorClass: string, lineColor: string }) => (
       <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
         <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-6 uppercase tracking-wider flex items-center gap-2">
-            {steps[0].icon} {/* Use first icon as header icon */}
+            {steps[0].icon}
             {title}
         </h3>
         <div className="relative flex justify-between items-start pt-2 px-2">
-            {/* Connecting Line */}
             <div className="absolute top-5 left-0 w-full h-0.5 bg-slate-100 dark:bg-slate-800 -z-0">
                  <div className={`h-full ${lineColor} opacity-20 w-full`}></div>
             </div>
@@ -221,8 +205,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
-      
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard 
             icon={ShoppingBag} 
@@ -268,11 +250,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column: Logistics & Charts */}
         <div className="lg:col-span-2 space-y-6">
-             
-            {/* 1. Inbound Logistics Flow */}
             <LogisticsFlow 
                 title="采购入库链路 (Inbound)"
                 colorClass="bg-blue-500 text-white"
@@ -284,8 +262,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                     { label: '已入库', count: inboundData.arrived, icon: <Warehouse /> }
                 ]}
             />
-
-            {/* 2. Outbound Logistics Flow */}
             <LogisticsFlow 
                 title="发货履约链路 (Outbound)"
                 colorClass="bg-emerald-500 text-white"
@@ -297,8 +273,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                     { label: '客户签收', count: outboundData.delivered, icon: <Home /> }
                 ]}
             />
-
-            {/* Status Distribution (Pie Chart) */}
              <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row gap-8 items-center mt-2">
                 <div className="flex-1 w-full relative">
                     <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-2 uppercase tracking-wider flex items-center gap-2">
@@ -317,8 +291,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                                     paddingAngle={3}
                                     dataKey="value"
                                     stroke="none"
-                                    animationBegin={0}
-                                    animationDuration={1500}
                                 >
                                     {statusData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
@@ -328,13 +300,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                                         position="center" 
                                         className="fill-slate-800 dark:fill-white text-3xl font-bold"
                                         style={{ fontSize: '24px', fontWeight: 'bold' }}
-                                    />
-                                    <Label 
-                                        value="Total" 
-                                        position="center" 
-                                        dy={20}
-                                        className="fill-slate-500 dark:fill-slate-400 text-xs uppercase"
-                                        style={{ fontSize: '12px' }}
                                     />
                                 </Pie>
                                 <Tooltip content={<CustomTooltip />} />
@@ -352,8 +317,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                     ))}
                 </div>
             </div>
-
-            {/* Platform Distribution (Bar Chart) */}
              <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
                 <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-6 uppercase tracking-wider flex items-center gap-2">
                     <div className="w-1 h-4 bg-violet-500 rounded-full"></div>
@@ -362,12 +325,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                 <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={platformData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity={1}/>
-                                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0.8}/>
-                                </linearGradient>
-                            </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.4} />
                             <XAxis 
                                 dataKey="name" 
@@ -389,19 +346,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                             />
                             <Bar 
                                 dataKey="value" 
-                                fill="url(#barGradient)" 
+                                fill="#8b5cf6" 
                                 radius={[6, 6, 0, 0]} 
                                 barSize={45} 
-                                animationDuration={1500}
                             />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
             </div>
-
         </div>
 
-        {/* Right Column: Warning List */}
         <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col h-full max-h-[820px]">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
                  <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
@@ -464,7 +418,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
                 </div>
             )}
         </div>
-
       </div>
     </div>
   );

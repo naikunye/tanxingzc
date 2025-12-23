@@ -1,4 +1,4 @@
-import { Order, OrderStatus } from '../types.ts';
+import { Order, OrderStatus } from '../types';
 
 interface Tracking17Result {
   number: string;
@@ -40,6 +40,7 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
         updatedCount++;
       }
     });
+
     return { 
       updatedOrders: newOrders, 
       count: updatedCount, 
@@ -101,6 +102,7 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
             }
          }
       }
+
       if (changed) {
         order.lastUpdated = new Date().toISOString();
         updatedCount++;
@@ -112,6 +114,7 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
         count: updatedCount, 
         message: `同步成功！已更新 ${updatedCount} 个订单的商家发货进度` 
     };
+
   } catch (error) {
     console.error("Logistics Sync Error:", error);
     return syncOrderLogistics(orders, ''); 

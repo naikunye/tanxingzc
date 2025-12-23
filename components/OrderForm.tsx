@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Order, OrderStatus, OrderStatusCN, Customer } from '../types.ts';
-import { parseOrderText, parseOrderImage } from '../services/geminiService.ts';
-import { Save, X, Loader2, ChevronRight, Truck, ShoppingCart, Image as ImageIcon, Sparkles, Calendar, Box, Hash, Tag, MapPin, Package, ShoppingBag } from 'lucide-react';
+import { Order, OrderStatus, OrderStatusCN, Customer } from '../types';
+import { parseOrderText, parseOrderImage } from '../services/geminiService';
+import { Save, X, Loader2, Image as ImageIcon, Sparkles, Truck, ShoppingBag, Hash, MapPin } from 'lucide-react';
 
 interface OrderFormProps {
   initialOrder?: Order | null;
@@ -108,13 +108,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
     <div className="max-w-6xl mx-auto py-2 animate-fade-in">
       <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">
         <div className="p-8 space-y-10">
-            {/* AI Parsing Section - Deep Dark Style */}
             {!initialOrder && (
                 <div className="bg-indigo-950/20 rounded-2xl p-6 border border-indigo-900/30 flex flex-col md:flex-row gap-6">
                     <div className="flex-1 relative">
                         {aiImagePreview ? (
                             <div className="h-32 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center p-3 relative">
-                                <img src={aiImagePreview} className="h-full object-contain rounded" />
+                                <img src={aiImagePreview} className="h-full object-contain rounded" alt="AI Preview" />
                                 <button onClick={() => setAiImagePreview(null)} className="absolute top-2 right-2 p-1.5 bg-red-900/80 text-white rounded-full hover:bg-red-800 transition-colors">
                                     <X size={14} />
                                 </button>
@@ -136,6 +135,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                             <input type="file" className="hidden" accept="image/*" onChange={handleAiImageUpload} />
                         </label>
                         <button 
+                            type="button"
                             onClick={handleAiParse} 
                             disabled={isAiLoading || (!aiInput && !aiImagePreview)} 
                             className="h-12 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-500 disabled:opacity-30 shadow-lg shadow-indigo-950/40 transition-all flex items-center justify-center gap-2"
@@ -149,7 +149,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
 
             <form onSubmit={handleSubmit} className="space-y-12">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                    {/* Left Column: Procurement */}
                     <div className="space-y-8">
                         <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
                             <div className="p-2 bg-indigo-500/10 rounded-xl">
@@ -206,7 +205,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                         </div>
                     </div>
 
-                    {/* Right Column: Logistics */}
                     <div className="space-y-8">
                         <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
                             <div className="p-2 bg-blue-500/10 rounded-xl">

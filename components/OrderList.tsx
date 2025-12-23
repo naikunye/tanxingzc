@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Order, OrderStatus, OrderStatusCN, TIMELINE_STEPS, WarningRules } from '../types.ts';
-import { Edit2, Trash2, Package, MapPin, MessageSquare, Loader2, Search, Check, ExternalLink, Truck, List, Grid, MoreVertical, ShoppingBag, CloudLightning, AlertTriangle, Columns, Download, Copy, CheckCircle2, StickyNote, Hash, Filter, Calendar, Tag, XCircle, CheckSquare, Square, X, RotateCcw, Plane, Upload, Brain, Sparkles, Wand2, Clock, AlertCircle, Hourglass, Box } from 'lucide-react';
-import { generateStatusUpdate, parseNaturalLanguageSearch } from '../services/geminiService.ts';
-import { parseCSV } from '../services/csvService.ts';
+import { Order, OrderStatus, OrderStatusCN, WarningRules } from '../types';
+import { Edit2, Trash2, MapPin, Loader2, Search, Truck, ShoppingBag, CloudLightning, Filter, Download, Upload, Clock, Plane, CheckCircle2, Box, CheckSquare, Square } from 'lucide-react';
+import { parseNaturalLanguageSearch } from '../services/geminiService';
 
 interface OrderListProps {
   orders: Order[];
@@ -21,31 +20,22 @@ interface OrderListProps {
   warningRules: WarningRules;
 }
 
-export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onRestore, onSync, isSyncing, onStatusChange, onBatchDelete, onBatchStatusChange, onImport, onBatchLogisticsUpdate, initialFilter = 'All', isTrash = false, warningRules }) => {
+export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onRestore, onSync, isSyncing, initialFilter = 'All', isTrash = false, warningRules }) => {
   const [filter, setFilter] = useState<OrderStatus | 'All' | 'delayed'>(initialFilter);
   const [searchTerm, setSearchTerm] = useState('');
-  const [generatingId, setGeneratingId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'table' | 'board'>('table');
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const logisticsFileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [isSmartSearch, setIsSmartSearch] = useState(false);
   const [isAiThinking, setIsAiThinking] = useState(false);
-
-  useEffect(() => {
-      if (isTrash) setViewMode('table');
-  }, [isTrash]);
-
-  useEffect(() => {
-    setFilter(initialFilter);
-  }, [initialFilter]);
-  
   const [showFilters, setShowFilters] = useState(false);
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [platformFilter, setPlatformFilter] = useState('All');
   const [hasNotesFilter, setHasNotesFilter] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setFilter(initialFilter);
+  }, [initialFilter]);
+  
   const getDelayType = (order: Order): 'purchase' | 'shipping' | null => {
     const now = new Date().getTime();
     if (order.status === OrderStatus.PURCHASED) {
@@ -64,20 +54,13 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
   const filteredOrders = (orders || []).filter(o => {
     let matchesStatus = true;
     if (!isTrash) {
-        if (viewMode === 'board') { matchesStatus = true; } 
-        else {
-            if (filter === 'All') matchesStatus = true;
-            else if (filter === 'delayed') matchesStatus = getDelayType(o) !== null;
-            else matchesStatus = o.status === filter;
-        }
+        if (filter === 'All') matchesStatus = true;
+        else if (filter === 'delayed') matchesStatus = getDelayType(o) !== null;
+        else matchesStatus = o.status === filter;
     }
     const matchesSearch = o.itemName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           o.buyerAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          o.trackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          o.supplierTrackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          o.platformOrderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          o.clientOrderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (o.notes && o.notes.toLowerCase().includes(searchTerm.toLowerCase()));
+                          o.platformOrderId?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesPlatform = platformFilter === 'All' || (o.platform || '其他') === platformFilter;
     const matchesDateStart = !dateRange.start || o.purchaseDate >= dateRange.start;
     const matchesDateEnd = !dateRange.end || o.purchaseDate <= dateRange.end;
@@ -135,7 +118,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
     switch(status) {
       case OrderStatus.PENDING: style = 'bg-slate-800 text-slate-400 border-slate-700'; icon = <Clock size={10} />; break;
       case OrderStatus.PURCHASED: style = 'bg-blue-900/20 text-blue-400 border-blue-900/50'; icon = <ShoppingBag size={10} />; break;
-      case OrderStatus.READY_TO_SHIP: style = 'bg-amber-900/20 text-amber-400 border-amber-900/50'; icon = <Package size={10} />; break;
+      case OrderStatus.READY_TO_SHIP: style = 'bg-amber-900/20 text-amber-400 border-amber-900/50'; icon = <Box size={10} />; break;
       case OrderStatus.SHIPPED: style = 'bg-indigo-900/20 text-indigo-400 border-indigo-900/50'; icon = <Plane size={10} />; break;
       case OrderStatus.DELIVERED: style = 'bg-emerald-900/20 text-emerald-400 border-emerald-900/50'; icon = <CheckCircle2 size={10} />; break;
       default: style = 'bg-slate-800 text-slate-400 border-slate-700';
@@ -151,13 +134,13 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
       <input type="file" ref={fileInputRef} className="hidden" accept=".csv" />
-
       <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl shadow-sm border border-slate-800 overflow-hidden">
           <div className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-2 w-full md:w-auto flex-1">
                 <div className="relative w-full md:max-w-lg group">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400" size={16} />
-                    <input type="text" placeholder="搜索关键词..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={isSmartSearch ? handleSmartSearch : undefined} className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-950/40 border border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 outline-none text-white transition-all" />
+                    <input type="text" placeholder="搜索关键词..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={handleSmartSearch} className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-950/40 border border-slate-800 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 outline-none text-white transition-all" />
+                    {isAiThinking && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-indigo-500" size={14} />}
                 </div>
                 {!isTrash && (
                     <button onClick={() => setShowFilters(!showFilters)} className={`p-2.5 rounded-xl border transition-all ${showFilters ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'}`}><Filter size={18} /></button>
@@ -170,13 +153,11 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
             </div>
           </div>
       </div>
-      
       {!isTrash && (
         <div className="flex overflow-x-auto pb-1 gap-2 scrollbar-hide">
              {['All', ...Object.values(OrderStatus), 'delayed'].map((s: any) => (<button key={s} onClick={() => setFilter(s)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${filter === s ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-900 text-slate-500 border border-slate-800 hover:border-slate-700 hover:text-slate-300'}`}>{s === 'All' ? '全部订单' : s === 'delayed' ? '异常预警' : OrderStatusCN[s as OrderStatus]}</button>))}
         </div>
       )}
-
       <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl shadow-sm border border-slate-800 overflow-hidden">
           <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">

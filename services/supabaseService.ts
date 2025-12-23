@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Order, Customer, SupabaseConfig } from '../types.ts';
+import { Order, Customer, SupabaseConfig } from '../types';
 
 let supabase: SupabaseClient | null = null;
 
@@ -40,7 +40,7 @@ export const fetchCloudOrders = async (): Promise<Order[]> => {
 
   return data.map((row: any) => ({
     ...row.order_data,
-    id: row.id 
+    id: row.id
   }));
 };
 
@@ -84,7 +84,7 @@ export const fetchCloudCustomers = async (): Promise<Customer[]> => {
 
   return data.map((row: any) => ({
     ...row.customer_data,
-    id: row.id 
+    id: row.id
   }));
 };
 

@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ViewState, Order, Customer, SupabaseConfig, AppSettings, OrderStatus, WarningRules } from './types.ts';
-import { Dashboard } from './components/Dashboard.tsx';
-import { OrderList } from './components/OrderList.tsx';
-import { OrderForm } from './components/OrderForm.tsx';
-import { CustomerList } from './components/CustomerList.tsx';
-import { ToastContainer, ToastMessage, ToastType } from './components/Toast.tsx';
-import { LayoutDashboard, ShoppingCart, PlusCircle, Settings, Box, Cloud, Loader2, Database, Wifi, WifiOff, Copy, Check, ExternalLink, Truck, ChevronDown, Users, Moon, Sun, Trash2, Recycle, AlertTriangle, Hourglass, Menu, Save, Upload, Code, HelpCircle, X, Plus } from 'lucide-react';
-import { initSupabase, fetchCloudOrders, saveCloudOrder, deleteCloudOrder, fetchCloudCustomers, saveCloudCustomer, deleteCloudCustomer } from './services/supabaseService.ts';
-import { syncOrderLogistics } from './services/logisticsService.ts';
+import React, { useState, useEffect } from 'react';
+import { ViewState, Order, Customer, SupabaseConfig, AppSettings, OrderStatus, WarningRules } from './types';
+import { Dashboard } from './components/Dashboard';
+import { OrderList } from './components/OrderList';
+import { OrderForm } from './components/OrderForm';
+import { CustomerList } from './components/CustomerList';
+import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
+import { LayoutDashboard, ShoppingCart, Settings, Box, Cloud, Database, ExternalLink, ChevronDown, Users, Moon, Sun, Trash2, Menu, Plus } from 'lucide-react';
+import { initSupabase, fetchCloudOrders, saveCloudOrder, fetchCloudCustomers, saveCloudCustomer, deleteCloudCustomer } from './services/supabaseService';
+import { syncOrderLogistics } from './services/logisticsService';
 
 const STORAGE_KEY = 'smart_procure_data';
 const CUSTOMERS_KEY = 'smart_procure_customers';
@@ -51,7 +51,7 @@ const App: React.FC = () => {
         const currentSettings: AppSettings = {
             cloudConfig: config.url ? config : { url: '', key: '' },
             tracking17Token: parsed.tracking17Token || '',
-            theme: 'dark', // 强制默认深色
+            theme: 'dark', 
             warningRules: { ...DEFAULT_WARNING_RULES, ...parsed.warningRules }
         };
         setSettings(currentSettings);
@@ -75,11 +75,6 @@ const App: React.FC = () => {
   };
 
   const removeToast = (id: string) => setToasts(prev => prev.filter(t => t.id !== id));
-
-  const saveSettings = (newSettings: AppSettings) => {
-      setSettings(newSettings);
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
-  };
 
   const loadLocalData = () => {
     const savedOrders = localStorage.getItem(STORAGE_KEY);
