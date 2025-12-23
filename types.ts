@@ -33,22 +33,22 @@ export interface Order {
   buyerAddress: string;
   purchaseDate: string; // ISO Date string
   platform: string;
-  platformOrderId?: string; // Order ID from the platform (e.g. Amazon 112-xxx)
-  clientOrderId?: string; // ID provided by the client/buyer
+  platformOrderId?: string;
+  clientOrderId?: string;
   status: OrderStatus;
   
   // Logistics
-  trackingNumber?: string; // Logistics to customer
-  supplierTrackingNumber?: string; // Tracking from supplier to agent
-  detailedStatus?: string; // Detailed string from 17TRACK (e.g., "In Transit", "Pick Up")
+  trackingNumber?: string;
+  supplierTrackingNumber?: string;
+  detailedStatus?: string;
   
-  imageUrl?: string; // Base64 or URL
+  imageUrl?: string;
   notes?: string;
   lastUpdated: string;
   
   // Soft Delete Fields
   deleted?: boolean;
-  deletedAt?: string; // ISO Date string when it was moved to trash
+  deletedAt?: string;
 }
 
 export interface Customer {
@@ -74,15 +74,17 @@ export interface SupabaseConfig {
 }
 
 export interface WarningRules {
-  purchaseTimeoutHours: number; // e.g. 48 hours. Warn if PURCHASED but not Shipped.
-  shippingTimeoutDays: number;  // e.g. 7 days. Warn if SHIPPED but not Delivered.
-  impendingBufferHours: number; // e.g. 24 hours. Show "Yellow" warning if within this window before timeout.
+  purchaseTimeoutHours: number;
+  shippingTimeoutDays: number;
+  impendingBufferHours: number;
 }
+
+export type ThemeType = 'dark' | 'aurora' | 'crystal';
 
 export interface AppSettings {
   cloudConfig: SupabaseConfig;
   tracking17Token: string;
-  theme: 'light' | 'dark';
+  theme: ThemeType;
   warningRules: WarningRules;
 }
 

@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
-import { ViewState, Order, Customer, SupabaseConfig, AppSettings, OrderStatus, WarningRules } from './types';
+import { ViewState, Order, Customer, SupabaseConfig, AppSettings, OrderStatus, WarningRules, ThemeType } from './types';
 import { Dashboard } from './components/Dashboard';
 import { OrderList } from './components/OrderList';
 import { OrderForm } from './components/OrderForm';
 import { CustomerList } from './components/CustomerList';
 import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
-import { LayoutDashboard, ShoppingCart, Settings, Box, Cloud, Database, ExternalLink, ChevronDown, Users, Moon, Sun, Trash2, Menu, Plus } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Settings, Box, Cloud, Database, ExternalLink, ChevronDown, Users, Moon, Trash2, Menu, Plus, Sparkles, Droplets } from 'lucide-react';
 import { initSupabase, fetchCloudOrders, saveCloudOrder, fetchCloudCustomers, saveCloudCustomer, deleteCloudCustomer } from './services/supabaseService';
 import { syncOrderLogistics } from './services/logisticsService';
 
@@ -38,8 +39,6 @@ const App: React.FC = () => {
   });
   
   const [isCloudMode, setIsCloudMode] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
 
   useEffect(() => {
@@ -51,11 +50,11 @@ const App: React.FC = () => {
         const currentSettings: AppSettings = {
             cloudConfig: config.url ? config : { url: '', key: '' },
             tracking17Token: parsed.tracking17Token || '',
-            theme: 'dark', 
+            theme: parsed.theme || 'dark', 
             warningRules: { ...DEFAULT_WARNING_RULES, ...parsed.warningRules }
         };
         setSettings(currentSettings);
-        applyTheme('dark');
+        applyTheme(currentSettings.theme);
         if (config.url && config.url.startsWith('http') && config.key) { connectToCloud(config); } 
         else { loadLocalData(); }
       } catch (e) { loadLocalData(); }
@@ -65,8 +64,15 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const applyTheme = (theme: 'light' | 'dark') => {
-      document.documentElement.classList.add('dark');
+  const applyTheme = (theme: ThemeType) => {
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'crystal') {
+          document.documentElement.classList.remove('dark');
+      } else {
+          document.documentElement.classList.add('dark');
+      }
+      setSettings(prev => ({ ...prev, theme }));
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings, theme }));
   };
 
   const showToast = (message: string, type: ToastType = 'info') => {
@@ -84,7 +90,6 @@ const App: React.FC = () => {
   };
 
   const connectToCloud = async (config: SupabaseConfig) => {
-    setIsLoading(true);
     const success = initSupabase(config);
     if (success) {
       try {
@@ -95,11 +100,10 @@ const App: React.FC = () => {
         showToast('云端数据同步成功', 'success');
       } catch (e: any) {
         setIsCloudMode(false);
-        showToast("连接失败: " + (e.message || '未知错误'), 'error');
+        showToast("同步失败", 'error');
         loadLocalData();
       }
     }
-    setIsLoading(false);
   };
 
   const handleSaveOrder = async (order: Order, silent: boolean = false) => {
@@ -118,7 +122,7 @@ const App: React.FC = () => {
         if (!orderToTrash) return;
         const updatedOrder: Order = { ...orderToTrash, deleted: true, deletedAt: new Date().toISOString() };
         await handleSaveOrder(updatedOrder, true);
-        showToast('订单已移入回收站', 'info');
+        showToast('已移入回收站', 'info');
     }
   };
 
@@ -185,47 +189,44 @@ const App: React.FC = () => {
       }}
       className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
         view === target || (target === 'edit' && view === 'edit') || (target === 'add' && view === 'add')
-          ? 'bg-indigo-600/10 dark:bg-slate-800 text-indigo-400 dark:text-white shadow-lg'
-          : 'text-slate-500 hover:bg-slate-800/50 hover:text-white'
+          ? 'bg-indigo-600 text-white shadow-lg'
+          : 'text-slate-400 hover:bg-white/5 hover:text-white'
       }`}
     >
       <div className="flex items-center gap-3">
-        <Icon size={18} className={`${view === target ? 'text-indigo-400' : ''}`} />
+        <Icon size={18} />
         <span className="font-bold text-sm">{label}</span>
       </div>
-      {count !== undefined && count > 0 && <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold">{count}</span>}
+      {count !== undefined && count > 0 && <span className="text-[10px] bg-white/10 text-white px-2 py-0.5 rounded-full font-bold">{count}</span>}
     </button>
   );
 
   const PurchaseLink = ({ href, label, sub }: { href: string, label: string, sub: string }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-800/50 hover:text-indigo-400 transition-all group">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full px-4 py-2 rounded-lg text-slate-400 hover:bg-white/5 hover:text-indigo-400 transition-all group">
         <div className="flex items-center gap-3">
              <div className="w-5 h-5 bg-white rounded-full p-0.5 shadow-sm flex items-center justify-center">
                  <img src={`https://www.google.com/s2/favicons?domain=${sub}&sz=32`} alt="icon" className="w-full h-full object-contain" />
              </div>
-             <div className="flex flex-col items-start">
-                <span className="text-[12px] font-bold">{label}</span>
-                <span className="text-[9px] text-slate-500 font-mono group-hover:text-indigo-400">{sub}</span>
-            </div>
+             <span className="text-[12px] font-bold">{label}</span>
         </div>
-      <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-400" />
+      <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
     </a>
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col md:flex-row font-sans text-slate-100 dark">
+    <div className="min-h-screen flex flex-col md:flex-row font-sans">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
       {isMobileMenuOpen && <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
 
-      <aside className={`fixed md:sticky top-0 left-0 h-full w-72 bg-slate-900 border-r border-slate-800 z-40 transition-transform duration-300 md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed md:sticky top-0 left-0 h-full w-72 glass-sidebar border-r border-white/5 z-40 transition-transform duration-300 md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-8 flex items-center gap-3 shrink-0">
-          <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
+          <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg">
              <Box className="text-white" size={24} strokeWidth={2.5} />
           </div>
           <div>
-              <h1 className="text-xl font-bold text-white tracking-tight leading-none">探行科技</h1>
-              <p className="text-[10px] text-slate-500 font-bold mt-1 tracking-widest uppercase">智能采集管理平台</p>
+              <h1 className="text-xl font-bold tracking-tight">探行科技</h1>
+              <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest mt-0.5">智能采集管理</p>
           </div>
         </div>
         
@@ -236,58 +237,53 @@ const App: React.FC = () => {
           <NavItem target="trash" icon={Trash2} label="回收站" count={orders.filter(o => o.deleted).length} />
           
           <div className="pt-8 pb-4">
-            <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">快捷操作</p>
-            <div className="mx-2 px-1 py-1 rounded-2xl border-2 border-dashed border-slate-800 bg-slate-800/30">
-                <button
-                    onClick={() => { setEditingOrder(null); setView('add'); setIsMobileMenuOpen(false); }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/20 transition-all font-bold text-sm"
-                >
-                    <Plus size={18} strokeWidth={3} />
-                    <span>新建订单</span>
-                </button>
-            </div>
+            <button
+                onClick={() => { setEditingOrder(null); setView('add'); setIsMobileMenuOpen(false); }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg transition-all font-bold text-sm"
+            >
+                <Plus size={18} strokeWidth={3} />
+                <span>录入新订单</span>
+            </button>
           </div>
 
           <div className="pt-4">
             <button onClick={() => setIsPlatformsOpen(!isPlatformsOpen)} className="w-full px-4 mb-2 flex items-center justify-between group">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">常用采购平台</span>
-                <ChevronDown size={14} className={`text-slate-500 transition-transform ${isPlatformsOpen ? 'rotate-180' : ''}`} />
+                <span className="text-[10px] font-bold opacity-30 uppercase tracking-widest">常用采购平台</span>
+                <ChevronDown size={14} className={`opacity-30 transition-transform ${isPlatformsOpen ? 'rotate-180' : ''}`} />
             </button>
             <div className={`space-y-0.5 transition-all overflow-hidden ${isPlatformsOpen ? 'max-h-[600px]' : 'max-h-0'}`}>
-              <PurchaseLink href="https://www.aliexpress.com" label="AliExpress 速卖通" sub="aliexpress.com" />
-              <PurchaseLink href="https://www.temu.com" label="Temu 特姆" sub="temu.com" />
-              <PurchaseLink href="https://www.shein.com" label="Shein 希音" sub="shein.com" />
-              <PurchaseLink href="https://www.amazon.com" label="Amazon 亚马逊" sub="amazon.com" />
-              <PurchaseLink href="https://www.ebay.com" label="eBay 易贝" sub="ebay.com" />
+              <PurchaseLink href="https://www.aliexpress.com" label="AliExpress" sub="aliexpress.com" />
+              <PurchaseLink href="https://www.temu.com" label="Temu" sub="temu.com" />
+              <PurchaseLink href="https://www.amazon.com" label="Amazon" sub="amazon.com" />
             </div>
           </div>
         </nav>
 
-        <div className="p-6 border-t border-slate-800 shrink-0">
-             <button onClick={() => setShowSettings(true)} className={`w-full px-4 py-3 rounded-xl border flex items-center gap-3 transition-colors ${isCloudMode ? 'bg-emerald-900/20 border-emerald-800 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
-                {isCloudMode ? <Cloud size={18} /> : <Database size={18} />}
-                <div className="text-left flex-1"><p className="text-xs font-bold">{isCloudMode ? '云端已同步' : '本地模式'}</p></div>
-                <Settings size={14} className="opacity-50" />
-            </button>
+        <div className="p-6 border-t border-white/5">
+             <div className="px-4 py-3 rounded-xl border border-white/10 glass-card flex items-center gap-3">
+                {isCloudMode ? <Cloud size={18} className="text-emerald-400" /> : <Database size={18} className="text-slate-400" />}
+                <div className="text-left flex-1 font-bold text-xs">{isCloudMode ? '云端已同步' : '本地模式'}</div>
+                <Settings size={14} className="opacity-30" />
+            </div>
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto bg-slate-950">
-        <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-8 py-5 sticky top-0 z-20 flex justify-between items-center transition-colors">
+      <main className="flex-1 overflow-auto flex flex-col">
+        <header className="glass-card border-b border-white/5 px-8 py-5 sticky top-0 z-20 flex justify-between items-center">
             <div className="flex items-center gap-4">
                 <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-slate-400"><Menu size={24} /></button>
-                <h2 className="text-xl font-bold text-white tracking-tight">
-                    {view === 'add' || view === 'edit' ? (editingOrder ? '编辑订单' : '录入新订单') : view === 'list' ? '订单管理' : view === 'customers' ? '客户管理' : view === 'trash' ? '回收站' : '数据概览'}
+                <h2 className="text-lg font-bold tracking-tight uppercase tracking-wider">
+                    {view === 'add' || view === 'edit' ? (editingOrder ? '编辑订单' : '录入新订单') : view === 'list' ? '订单管理' : view === 'customers' ? '客户管理' : view === 'trash' ? '回收站' : '系统看板'}
                 </h2>
             </div>
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span className="text-[11px] font-bold text-slate-300">系统运行正常</span>
-                </div>
+            <div className="flex items-center gap-1 bg-black/10 dark:bg-white/5 p-1 rounded-xl border border-white/10">
+                <button onClick={() => applyTheme('dark')} className={`p-2 rounded-lg transition-all ${settings.theme === 'dark' ? 'bg-indigo-600 text-white' : 'opacity-40 hover:opacity-100'}`} title="经典暗黑"><Moon size={16} /></button>
+                <button onClick={() => applyTheme('aurora')} className={`p-2 rounded-lg transition-all ${settings.theme === 'aurora' ? 'bg-indigo-600 text-white' : 'opacity-40 hover:opacity-100'}`} title="极光磨砂"><Sparkles size={16} /></button>
+                <button onClick={() => applyTheme('crystal')} className={`p-2 rounded-lg transition-all ${settings.theme === 'crystal' ? 'bg-white text-indigo-600' : 'opacity-40 hover:opacity-100'}`} title="冰晶磨砂"><Droplets size={16} /></button>
             </div>
         </header>
-        <div className="p-4 md:p-8">
+
+        <div className="p-4 md:p-8 flex-1">
           {view === 'dashboard' && <Dashboard orders={orders.filter(o => !o.deleted)} warningRules={settings.warningRules} onNavigate={(f) => { setActiveFilter(f); setView('list'); }} />}
           {view === 'list' && <OrderList orders={orders.filter(o => !o.deleted)} initialFilter={activeFilter} warningRules={settings.warningRules} onEdit={handleEditOrder} onDelete={handleDeleteOrder} onSync={handleSyncLogistics} isSyncing={syncStatus === 'syncing'} onStatusChange={handleStatusChange} />}
           {view === 'trash' && <OrderList orders={orders.filter(o => o.deleted)} warningRules={settings.warningRules} onEdit={() => {}} onDelete={() => {}} onRestore={handleRestoreOrder} isTrash={true} onSync={() => {}} isSyncing={false} />}
