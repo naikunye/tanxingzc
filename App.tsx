@@ -51,11 +51,11 @@ const App: React.FC = () => {
         const currentSettings: AppSettings = {
             cloudConfig: config.url ? config : { url: '', key: '' },
             tracking17Token: parsed.tracking17Token || '',
-            theme: parsed.theme || 'dark',
+            theme: 'dark', // 强制默认深色
             warningRules: { ...DEFAULT_WARNING_RULES, ...parsed.warningRules }
         };
         setSettings(currentSettings);
-        applyTheme(currentSettings.theme);
+        applyTheme('dark');
         if (config.url && config.url.startsWith('http') && config.key) { connectToCloud(config); } 
         else { loadLocalData(); }
       } catch (e) { loadLocalData(); }
@@ -66,14 +66,7 @@ const App: React.FC = () => {
   }, []);
 
   const applyTheme = (theme: 'light' | 'dark') => {
-      if (theme === 'dark') document.documentElement.classList.add('dark');
-      else document.documentElement.classList.remove('dark');
-  };
-
-  const toggleTheme = () => {
-      const newTheme = settings.theme === 'light' ? 'dark' : 'light';
-      saveSettings({ ...settings, theme: newTheme });
-      applyTheme(newTheme);
+      document.documentElement.classList.add('dark');
   };
 
   const showToast = (message: string, type: ToastType = 'info') => {
@@ -197,27 +190,27 @@ const App: React.FC = () => {
       }}
       className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
         view === target || (target === 'edit' && view === 'edit') || (target === 'add' && view === 'add')
-          ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-lg'
-          : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+          ? 'bg-indigo-600/10 dark:bg-slate-800 text-indigo-400 dark:text-white shadow-lg'
+          : 'text-slate-500 hover:bg-slate-800/50 hover:text-white'
       }`}
     >
       <div className="flex items-center gap-3">
         <Icon size={18} className={`${view === target ? 'text-indigo-400' : ''}`} />
         <span className="font-bold text-sm">{label}</span>
       </div>
-      {count !== undefined && count > 0 && <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">{count}</span>}
+      {count !== undefined && count > 0 && <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold">{count}</span>}
     </button>
   );
 
   const PurchaseLink = ({ href, label, sub }: { href: string, label: string, sub: string }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-indigo-600 transition-all group">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full px-4 py-2 rounded-lg text-slate-500 hover:bg-slate-800/50 hover:text-indigo-400 transition-all group">
         <div className="flex items-center gap-3">
-             <div className="w-5 h-5 bg-white rounded-full p-0.5 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-center">
+             <div className="w-5 h-5 bg-white rounded-full p-0.5 shadow-sm flex items-center justify-center">
                  <img src={`https://www.google.com/s2/favicons?domain=${sub}&sz=32`} alt="icon" className="w-full h-full object-contain" />
              </div>
              <div className="flex flex-col items-start">
                 <span className="text-[12px] font-bold">{label}</span>
-                <span className="text-[9px] text-slate-400 font-mono group-hover:text-indigo-400">{sub}</span>
+                <span className="text-[9px] text-slate-500 font-mono group-hover:text-indigo-400">{sub}</span>
             </div>
         </div>
       <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-400" />
@@ -225,19 +218,19 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 flex flex-col md:flex-row font-sans text-slate-800 dark:text-slate-100">
+    <div className="min-h-screen bg-slate-950 flex flex-col md:flex-row font-sans text-slate-100 dark">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      {isMobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
+      {isMobileMenuOpen && <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
 
-      <aside className={`fixed md:sticky top-0 left-0 h-full w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-40 transition-transform duration-300 md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed md:sticky top-0 left-0 h-full w-72 bg-slate-900 border-r border-slate-800 z-40 transition-transform duration-300 md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-8 flex items-center gap-3 shrink-0">
           <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
              <Box className="text-white" size={24} strokeWidth={2.5} />
           </div>
           <div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">探行科技</h1>
-              <p className="text-[10px] text-slate-400 font-bold mt-1 tracking-widest uppercase">智能采集管理平台</p>
+              <h1 className="text-xl font-bold text-white tracking-tight leading-none">探行科技</h1>
+              <p className="text-[10px] text-slate-500 font-bold mt-1 tracking-widest uppercase">智能采集管理平台</p>
           </div>
         </div>
         
@@ -248,11 +241,11 @@ const App: React.FC = () => {
           <NavItem target="trash" icon={Trash2} label="回收站" count={orders.filter(o => o.deleted).length} />
           
           <div className="pt-8 pb-4">
-            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">快捷操作</p>
-            <div className="mx-2 px-1 py-1 rounded-2xl border-2 border-dashed border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20">
+            <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">快捷操作</p>
+            <div className="mx-2 px-1 py-1 rounded-2xl border-2 border-dashed border-slate-800 bg-slate-800/30">
                 <button
                     onClick={() => { setEditingOrder(null); setView('add'); setIsMobileMenuOpen(false); }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-[#6366f1] hover:bg-[#585af2] text-white rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all font-bold text-sm"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/20 transition-all font-bold text-sm"
                 >
                     <Plus size={18} strokeWidth={3} />
                     <span>新建订单</span>
@@ -262,8 +255,8 @@ const App: React.FC = () => {
 
           <div className="pt-4">
             <button onClick={() => setIsPlatformsOpen(!isPlatformsOpen)} className="w-full px-4 mb-2 flex items-center justify-between group">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">常用采购平台</span>
-                <ChevronDown size={14} className={`text-slate-400 transition-transform ${isPlatformsOpen ? 'rotate-180' : ''}`} />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">常用采购平台</span>
+                <ChevronDown size={14} className={`text-slate-500 transition-transform ${isPlatformsOpen ? 'rotate-180' : ''}`} />
             </button>
             <div className={`space-y-0.5 transition-all overflow-hidden ${isPlatformsOpen ? 'max-h-[600px]' : 'max-h-0'}`}>
               <PurchaseLink href="https://www.aliexpress.com" label="AliExpress 速卖通" sub="aliexpress.com" />
@@ -275,8 +268,8 @@ const App: React.FC = () => {
           </div>
         </nav>
 
-        <div className="p-6 border-t border-slate-100 dark:border-slate-800 shrink-0">
-             <button onClick={() => setShowSettings(true)} className={`w-full px-4 py-3 rounded-xl border flex items-center gap-3 transition-colors ${isCloudMode ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'}`}>
+        <div className="p-6 border-t border-slate-800 shrink-0">
+             <button onClick={() => setShowSettings(true)} className={`w-full px-4 py-3 rounded-xl border flex items-center gap-3 transition-colors ${isCloudMode ? 'bg-emerald-900/20 border-emerald-800 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
                 {isCloudMode ? <Cloud size={18} /> : <Database size={18} />}
                 <div className="text-left flex-1"><p className="text-xs font-bold">{isCloudMode ? '云端已同步' : '本地模式'}</p></div>
                 <Settings size={14} className="opacity-50" />
@@ -284,19 +277,19 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto bg-[#f8fafc] dark:bg-[#020617]">
-        {/* Header - Unified with deep slate theme */}
-        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-8 py-5 sticky top-0 z-20 flex justify-between items-center transition-colors">
+      <main className="flex-1 overflow-auto bg-slate-950">
+        <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-8 py-5 sticky top-0 z-20 flex justify-between items-center transition-colors">
             <div className="flex items-center gap-4">
-                <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-slate-600 dark:text-slate-400"><Menu size={24} /></button>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-slate-400"><Menu size={24} /></button>
+                <h2 className="text-xl font-bold text-white tracking-tight">
                     {view === 'add' || view === 'edit' ? (editingOrder ? '编辑订单' : '录入新订单') : view === 'list' ? '订单管理' : view === 'customers' ? '客户管理' : view === 'trash' ? '回收站' : '数据概览'}
                 </h2>
             </div>
             <div className="flex items-center gap-4">
-                <button onClick={toggleTheme} className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                    {settings.theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-                </button>
+                <div className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span className="text-[11px] font-bold text-slate-300">系统运行正常</span>
+                </div>
             </div>
         </header>
         <div className="p-4 md:p-8">
