@@ -1,10 +1,9 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Order, Customer, SupabaseConfig } from '../types';
+import { Order, Customer, SupabaseConfig } from '../types.ts';
 
 let supabase: SupabaseClient | null = null;
 
 export const initSupabase = (config: SupabaseConfig) => {
-  // Validate URL format before attempting to create client
   if (!config.url || !config.url.startsWith('http')) {
     console.warn("Skipping Supabase init: Invalid URL format");
     return false;
@@ -26,11 +25,6 @@ export const initSupabase = (config: SupabaseConfig) => {
 
 export const getSupabaseClient = () => supabase;
 
-// We use a simplified table structure: 
-// Table Name: 'orders'
-// Columns: id (text/uuid, PK), order_data (jsonb)
-// This allows flexible schema evolution without complex SQL migrations for the user.
-
 export const fetchCloudOrders = async (): Promise<Order[]> => {
   if (!supabase) return [];
   
@@ -44,17 +38,15 @@ export const fetchCloudOrders = async (): Promise<Order[]> => {
     throw error;
   }
 
-  // Map back from JSON storage
   return data.map((row: any) => ({
     ...row.order_data,
-    id: row.id // Ensure ID matches
+    id: row.id 
   }));
 };
 
 export const saveCloudOrder = async (order: Order) => {
   if (!supabase) return;
 
-  // Upsert: Insert or Update based on ID
   const { error } = await supabase
     .from('orders')
     .upsert({ 
@@ -77,8 +69,6 @@ export const deleteCloudOrder = async (id: string) => {
   if (error) throw error;
 };
 
-// --- Customers ---
-
 export const fetchCloudCustomers = async (): Promise<Customer[]> => {
   if (!supabase) return [];
   
@@ -92,17 +82,15 @@ export const fetchCloudCustomers = async (): Promise<Customer[]> => {
     throw error;
   }
 
-  // Map back from JSON storage
   return data.map((row: any) => ({
     ...row.customer_data,
-    id: row.id // Ensure ID matches
+    id: row.id 
   }));
 };
 
 export const saveCloudCustomer = async (customer: Customer) => {
   if (!supabase) return;
 
-  // Upsert
   const { error } = await supabase
     .from('customers')
     .upsert({ 
