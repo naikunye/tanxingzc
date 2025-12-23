@@ -33,7 +33,7 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>({
     cloudConfig: { url: '', key: '' },
     tracking17Token: '',
-    theme: 'dark', // 默认深色，符合截图
+    theme: 'dark', 
     warningRules: DEFAULT_WARNING_RULES
   });
   
@@ -285,8 +285,8 @@ const App: React.FC = () => {
       </aside>
 
       <main className="flex-1 overflow-auto bg-[#f8fafc] dark:bg-[#020617]">
-        {/* Updated Header for consistent system look */}
-        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-8 py-5 sticky top-0 z-20 flex justify-between items-center">
+        {/* Header - Unified with deep slate theme */}
+        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-8 py-5 sticky top-0 z-20 flex justify-between items-center transition-colors">
             <div className="flex items-center gap-4">
                 <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-slate-600 dark:text-slate-400"><Menu size={24} /></button>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
