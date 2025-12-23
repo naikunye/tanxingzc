@@ -1,15 +1,21 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>探行科技智能采集管理平台</title>
     <script>
-      // 必须在最顶端定义，防止模块初始化时找不到 process 对象
+      // 架构修复：在所有脚本运行前，确保全局 process 对象完整
       window.process = { 
         env: { 
-          API_KEY: "" 
+          API_KEY: "",
+          NODE_ENV: "production"
         } 
+      };
+      
+      // 增加错误监控：如果发生崩溃，至少能通过控制台看到原因
+      window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Critical Error Detected:", message, error);
       };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -29,36 +35,22 @@
     <style>
       body {
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        background-color: #f8fafc;
-        color: #0f172a;
+        background-color: #020617; /* 强制锁定暗色背景防止闪烁 */
+        color: #f1f5f9;
+        margin: 0;
       }
       .dark body {
         background-color: #020617;
         color: #f1f5f9;
       }
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
-      }
-      .animate-fade-in {
-        animation: fadeIn 0.4s ease-out forwards;
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(8px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #334155; }
+      .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
-  <script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@19.0.0",
@@ -73,7 +65,7 @@
   }
 }
 </script>
-</head>
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
