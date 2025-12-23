@@ -4,16 +4,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>探行科技智能采集管理平台</title>
+    <title>探行科技 | 智能代采 OS</title>
     <script>
       window.process = { 
         env: { 
           API_KEY: "",
           NODE_ENV: "production"
         } 
-      };
-      window.onerror = function(message, source, lineno, colno, error) {
-        console.error("Critical Error Detected:", message, error);
       };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -24,98 +21,122 @@
           extend: {
             fontFamily: {
               sans: ['Inter', 'system-ui', 'sans-serif'],
+              display: ['Outfit', 'Inter', 'sans-serif'],
+            },
+            colors: {
+              premium: {
+                50: '#f8fafc',
+                100: '#f1f5f9',
+                200: '#e2e8f0',
+                300: '#cbd5e1',
+                400: '#94a3b8',
+                500: '#64748b',
+                600: '#475569',
+                700: '#334155',
+                800: '#1e293b',
+                900: '#0f172a',
+                950: '#020617',
+              }
             }
           }
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
       :root {
         --bg-color: #020617;
-        --glass-bg: rgba(15, 23, 42, 0.7);
-        --glass-border: rgba(30, 41, 59, 0.5);
-        --sidebar-bg: #0f172a;
-        --text-color: #f1f5f9;
-        --accent-color: #6366f1;
-        --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        --glass-bg: rgba(15, 23, 42, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --accent-glow: rgba(99, 102, 241, 0.15);
       }
 
-      /* 极光主题 (Aurora) */
       [data-theme='aurora'] {
-        --bg-color: #0c0a1f;
-        --glass-bg: rgba(30, 27, 75, 0.4);
-        --glass-border: rgba(99, 102, 241, 0.2);
-        --sidebar-bg: rgba(12, 10, 31, 0.85);
-        --text-color: #f8fafc;
-        --accent-color: #8b5cf6;
-        background-image: 
-          radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-          radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
-          radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
-        background-attachment: fixed;
+        --bg-color: #070714;
+        --glass-bg: rgba(13, 12, 34, 0.6);
+        --glass-border: rgba(139, 92, 246, 0.15);
+        background: radial-gradient(circle at 0% 0%, #1e1b4b 0%, transparent 40%),
+                    radial-gradient(circle at 100% 100%, #312e81 0%, transparent 40%),
+                    #070714;
       }
 
-      /* 冰晶主题 (Crystal) */
       [data-theme='crystal'] {
-        --bg-color: #f1f5f9;
-        --glass-bg: rgba(255, 255, 255, 0.6);
-        --glass-border: rgba(226, 232, 240, 0.8);
-        --sidebar-bg: rgba(255, 255, 255, 0.8);
-        --text-color: #0f172a;
-        --accent-color: #0ea5e9;
-        background-image: 
-          radial-gradient(at 0% 100%, hsla(210,100%,96%,1) 0, transparent 50%), 
-          radial-gradient(at 100% 0%, hsla(190,100%,96%,1) 0, transparent 50%);
-        background-attachment: fixed;
+        --bg-color: #f8fafc;
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(0, 0, 0, 0.05);
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        color: #0f172a;
       }
 
       body {
         margin: 0;
         background-color: var(--bg-color);
-        color: var(--text-color);
-        transition: background 0.5s ease;
+        font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
       }
 
-      .glass-card {
+      .font-display { font-family: 'Outfit', sans-serif; }
+
+      .premium-glass {
         background: var(--glass-bg);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
         border: 1px solid var(--glass-border);
-        box-shadow: var(--shadow);
       }
 
-      .glass-sidebar {
-        background: var(--sidebar-bg);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+      .premium-shadow {
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
       }
 
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      .hover-glow {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .hover-glow:hover {
+        box-shadow: 0 0 20px var(--accent-glow);
+        transform: translateY(-2px);
+      }
+
+      /* 滚动条美化 */
+      ::-webkit-scrollbar { width: 5px; }
       ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 4px; }
-      ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.4); }
+      ::-webkit-scrollbar-thumb { 
+        background: rgba(255, 255, 255, 0.1); 
+        border-radius: 10px; 
+      }
+      ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
 
-      .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-slide-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+      .grain-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+        opacity: 0.03;
+        pointer-events: none;
+        z-index: 9999;
+      }
     </style>
-    <script type="importmap">
+  <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom": "https://esm.sh/react-dom@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
-    "recharts": "https://esm.sh/recharts@3.6.0?external=react,react-dom",
-    "lucide-react": "https://esm.sh/lucide-react@0.562.0?external=react",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.48.1",
+    "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.89.0"
   }
 }
 </script>
-  </head>
+</head>
   <body>
+    <div class="grain-overlay"></div>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>

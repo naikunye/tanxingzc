@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, OrderStatusCN, WarningRules } from '../types';
-import { Edit2, Trash2, MapPin, Loader2, Search, Truck, ShoppingBag, CloudLightning, Filter, Download, Upload, Clock, Plane, CheckCircle2, Box, CheckSquare, Square, ExternalLink } from 'lucide-react';
+import { Edit2, Trash2, Search, Box, CloudLightning, Clock, CheckSquare, Square, ExternalLink, Hash, ShoppingBag, Truck, FileText, Layers, DollarSign, ArrowRight } from 'lucide-react';
 
 interface OrderListProps {
   orders: Order[];
@@ -33,29 +33,28 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
     }
     const matchesSearch = o.itemName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           o.buyerAddress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          o.platformOrderId?.toLowerCase().includes(searchTerm.toLowerCase());
+                          o.platformOrderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          o.clientOrderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          o.trackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          o.supplierTrackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (o.notes && o.notes.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
 
-  const toggleSelectAll = () => {
-      if (selectedIds.size === filteredOrders.length && filteredOrders.length > 0) { setSelectedIds(new Set()); } 
-      else { setSelectedIds(new Set(filteredOrders.map(o => o.id))); }
-  };
-
   const getStatusBadge = (order: Order) => {
-    if (isTrash) return <span className="px-2 py-0.5 rounded text-[10px] font-bold border bg-red-950/20 text-red-500 border-red-900/50 flex items-center gap-1"><Trash2 size={10}/> 已删除</span>;
+    if (isTrash) return <span className="px-3 py-1 rounded-full text-[10px] font-bold border border-red-500/20 bg-red-500/10 text-red-500 flex items-center gap-1.5"><Trash2 size={10}/> 已归档</span>;
     const status = order.status;
     let style = 'bg-slate-800 text-slate-400 border-slate-700';
     switch(status) {
-      case OrderStatus.PURCHASED: style = 'bg-blue-900/20 text-blue-400 border-blue-900/50'; break;
-      case OrderStatus.READY_TO_SHIP: style = 'bg-amber-900/20 text-amber-400 border-amber-900/50'; break;
-      case OrderStatus.SHIPPED: style = 'bg-indigo-900/20 text-indigo-400 border-indigo-900/50'; break;
-      case OrderStatus.DELIVERED: style = 'bg-emerald-900/20 text-emerald-400 border-emerald-900/50'; break;
+      case OrderStatus.PURCHASED: style = 'bg-blue-500/10 text-blue-400 border-blue-500/20'; break;
+      case OrderStatus.READY_TO_SHIP: style = 'bg-amber-500/10 text-amber-400 border-amber-500/20'; break;
+      case OrderStatus.SHIPPED: style = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'; break;
+      case OrderStatus.DELIVERED: style = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'; break;
     }
-    return <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${style}`}>{OrderStatusCN[status]}</span>;
+    return <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${style}`}>{OrderStatusCN[status]}</span>;
   };
 
-  const TrackLink = ({ num, label }: { num?: string, label?: string }) => {
+  const TrackLink = ({ num, label, type }: { num?: string, label?: string, type?: 'internal' | 'tracking' }) => {
     if (!num) return null;
     return (
       <a 
@@ -63,97 +62,165 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
         target="_blank" 
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
-        className="inline-flex items-center gap-1 text-indigo-400 hover:text-indigo-300 hover:underline transition-all group/link"
+        className={`inline-flex items-center gap-1.5 transition-all group/link font-mono text-[11px] ${type === 'internal' ? 'text-indigo-400 hover:text-indigo-300' : 'text-slate-500 hover:text-indigo-400'}`}
       >
-        <span className="truncate max-w-[120px] font-mono">{label || num}</span>
-        <ExternalLink size={10} className="opacity-40 group-hover/link:opacity-100" />
+        <span className="truncate max-w-[120px]">{label || num}</span>
+        <ExternalLink size={10} className="opacity-0 group-hover/link:opacity-100 shrink-0" />
       </a>
     );
   };
 
   return (
-    <div className="space-y-6 animate-fade-in pb-10">
-      <div className="glass-card rounded-2xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="relative w-full md:max-w-lg group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100" size={16} />
-            <input type="text" placeholder="搜索关键词..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2.5 text-sm bg-white/5 border border-white/5 rounded-xl focus:border-indigo-500/50 outline-none transition-all" />
+    <div className="space-y-8 animate-slide-up">
+      {/* 工具栏 */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="relative w-full md:max-w-xl group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-indigo-500" size={18} />
+            <input 
+              type="text" 
+              placeholder="通过单号、关键词、备注或地址搜索您的资产..." 
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)} 
+              className="w-full pl-14 pr-6 py-4.5 text-sm premium-glass rounded-2xl border-white/5 focus:border-indigo-500/30 outline-none transition-all placeholder:text-slate-600 text-slate-200" 
+            />
         </div>
-        <div className="flex items-center gap-3">
-            <button onClick={onSync} disabled={isSyncing} className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-indigo-500 transition-colors">
-                {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <CloudLightning size={14} />}
-                智能同步
+        <div className="flex items-center gap-4 w-full md:w-auto">
+            {!isTrash && (
+              <div className="flex p-1.5 premium-glass rounded-2xl border-white/5 shrink-0 overflow-x-auto max-w-full scrollbar-hide">
+                 {['All', ...Object.values(OrderStatus)].map((s: any) => (
+                    <button 
+                      key={s} 
+                      onClick={() => setFilter(s)} 
+                      className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all duration-300 whitespace-nowrap ${filter === s ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                        {s === 'All' ? '全部项目' : OrderStatusCN[s as OrderStatus]}
+                    </button>
+                 ))}
+              </div>
+            )}
+            <button onClick={onSync} disabled={isSyncing} className="p-4 premium-glass border-white/5 rounded-2xl text-indigo-400 hover:text-indigo-300 transition-all hover:scale-110 active:scale-95">
+                {isSyncing ? <Clock size={18} className="animate-spin" /> : <CloudLightning size={18} />}
             </button>
         </div>
       </div>
 
-      {!isTrash && (
-        <div className="flex overflow-x-auto pb-1 gap-2 scrollbar-hide">
-             {['All', ...Object.values(OrderStatus)].map((s: any) => (
-                <button key={s} onClick={() => setFilter(s)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${filter === s ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 border border-white/5 text-slate-400 hover:text-white'}`}>
-                    {s === 'All' ? '全部订单' : OrderStatusCN[s as OrderStatus]}
-                </button>
-             ))}
-        </div>
-      )}
+      {/* 订单网格列表 */}
+      <div className="grid grid-cols-1 gap-4">
+          {filteredOrders.map(order => (
+              <div 
+                  key={order.id} 
+                  onClick={() => !isTrash && onEdit(order)} 
+                  className="group relative p-6 premium-glass rounded-[2rem] border-white/5 hover:border-indigo-500/20 transition-all duration-500 hover:-translate-y-1 cursor-pointer flex flex-col lg:flex-row items-center gap-8 overflow-hidden"
+              >
+                  {/* 背景装饰 */}
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[100px] -z-10 group-hover:bg-indigo-500/10 transition-colors" />
 
-      <div className="glass-card rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                  <thead className="bg-white/5 text-slate-500 font-bold border-b border-white/5 uppercase tracking-wider text-[11px]">
-                      <tr>
-                          <th className="px-6 py-4 w-12"><button onClick={toggleSelectAll}>{selectedIds.size > 0 && selectedIds.size === filteredOrders.length ? <CheckSquare size={18} className="text-indigo-500"/> : <Square size={18} />}</button></th>
-                          <th className="px-4 py-4">商品 / 采购物流</th>
-                          <th className="px-4 py-4">状态 / 发货单号</th>
-                          <th className="px-4 py-4">渠道 / 内部号</th>
-                          <th className="px-6 py-4 text-right">操作</th>
-                      </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                      {filteredOrders.map(order => (
-                          <tr key={order.id} onClick={() => !isTrash && onEdit(order)} className={`group transition-all hover:bg-white/5 cursor-pointer`}>
-                              <td className="px-6 py-6" onClick={(e) => { e.stopPropagation(); const n = new Set(selectedIds); n.has(order.id) ? n.delete(order.id) : n.add(order.id); setSelectedIds(n); }}><button>{selectedIds.has(order.id) ? <CheckSquare size={18} className="text-indigo-500"/> : <Square size={18} />}</button></td>
-                              <td className="px-4 py-6">
-                                  <div className="flex gap-4">
-                                      <div className="w-12 h-12 rounded-lg bg-black/20 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden">{order.imageUrl ? <img src={order.imageUrl} alt="" className="w-full h-full object-cover" /> : <Box size={20} className="opacity-20" />}</div>
-                                      <div className="min-w-0">
-                                          <div className="font-bold line-clamp-1 mb-1">{order.itemName}</div>
-                                          <div className="text-[10px] opacity-40">
-                                            {order.trackingNumber ? <TrackLink num={order.trackingNumber} label={`采购跟踪: ${order.trackingNumber}`} /> : '暂无物流号'}
-                                          </div>
-                                      </div>
-                                  </div>
-                              </td>
-                              <td className="px-4 py-6">
-                                  <div className="flex flex-col gap-1.5">
-                                      {getStatusBadge(order)}
-                                      <div className="text-[10px] opacity-50">
-                                        {order.supplierTrackingNumber ? <TrackLink num={order.supplierTrackingNumber} label={order.supplierTrackingNumber} /> : <span className="italic">未发货</span>}
-                                      </div>
-                                  </div>
-                              </td>
-                              <td className="px-4 py-6">
-                                  <div className="flex flex-col gap-1">
-                                      <span className="text-xs font-bold opacity-50">{order.platform}</span>
-                                      {order.clientOrderId && <span className="text-[10px] font-mono text-indigo-400">#{order.clientOrderId}</span>}
-                                  </div>
-                              </td>
-                              <td className="px-6 py-6 text-right">
-                                  <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      {isTrash ? (
-                                        <button onClick={(e) => { e.stopPropagation(); onRestore?.(order.id); }} className="p-2 hover:bg-white/10 rounded-lg text-emerald-400"><Clock size={14} /></button>
-                                      ) : (
-                                        <>
-                                          <button className="p-2 hover:bg-white/10 rounded-lg"><Edit2 size={14} /></button>
-                                          <button onClick={(e) => { e.stopPropagation(); onDelete(order.id); }} className="p-2 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={14} /></button>
-                                        </>
-                                      )}
-                                  </div>
-                              </td>
-                          </tr>
-                      ))}
-                  </tbody>
-              </table>
-          </div>
+                  {/* 商品视觉 */}
+                  <div className="relative shrink-0">
+                      <div className="w-20 h-20 rounded-3xl bg-black/40 border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl group-hover:scale-105 transition-transform duration-500">
+                        {order.imageUrl ? (
+                            <img src={order.imageUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                            <Box size={28} className="text-slate-700 opacity-50" />
+                        )}
+                      </div>
+                      <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-2xl premium-glass border-white/10 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">
+                        {order.quantity}
+                      </div>
+                  </div>
+
+                  {/* 详情核心 */}
+                  <div className="flex-1 min-w-0 space-y-3 text-center lg:text-left">
+                      <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                          <h3 className="text-lg font-display font-bold text-white truncate max-w-sm" title={order.itemName}>{order.itemName}</h3>
+                          {getStatusBadge(order)}
+                      </div>
+                      
+                      <div className="flex flex-wrap justify-center lg:justify-start items-center gap-4 text-[11px] font-bold tracking-tight">
+                          <div className="flex items-center gap-1.5 text-indigo-400/80">
+                            <DollarSign size={12} />
+                            <span>${(order.priceUSD * order.quantity).toFixed(2)}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-500">
+                            <Hash size={12} />
+                            <span>{order.clientOrderId || '未指定内部号'}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-500">
+                            <ShoppingBag size={12} />
+                            <span className="uppercase opacity-60">{order.platform}</span>
+                          </div>
+                      </div>
+
+                      {order.notes && (
+                          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/5 text-[10px] text-slate-400 italic">
+                            <FileText size={10} className="text-amber-500/50" />
+                            <span className="truncate max-w-[300px]">{order.notes}</span>
+                          </div>
+                      )}
+                  </div>
+
+                  {/* 收货地址 (高端系统注重买家) */}
+                  <div className="w-full lg:w-64 px-6 py-4 rounded-3xl bg-white/5 border border-white/5 flex flex-col gap-1">
+                      <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1">Destination</p>
+                      <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2" title={order.buyerAddress}>
+                        {order.buyerAddress}
+                      </p>
+                  </div>
+
+                  {/* 物流链路 */}
+                  <div className="w-full lg:w-48 flex flex-col gap-2 items-center lg:items-end">
+                      <div className="flex flex-col gap-1 items-center lg:items-end">
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Procure Track</p>
+                          <TrackLink num={order.trackingNumber} />
+                      </div>
+                      <div className="flex flex-col gap-1 items-center lg:items-end">
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Delivery Info</p>
+                          {order.supplierTrackingNumber ? (
+                              <TrackLink num={order.supplierTrackingNumber} />
+                          ) : (
+                              <span className="text-[10px] text-slate-700 italic">待录入</span>
+                          )}
+                      </div>
+                  </div>
+
+                  {/* 操作区 */}
+                  <div className="flex items-center gap-2 shrink-0 border-t lg:border-t-0 lg:border-l border-white/5 pt-4 lg:pt-0 lg:pl-6">
+                      {isTrash ? (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); onRestore?.(order.id); }} 
+                          className="w-10 h-10 flex items-center justify-center bg-emerald-500/10 text-emerald-400 rounded-2xl hover:bg-emerald-500/20 transition-colors"
+                        >
+                          <Clock size={18} />
+                        </button>
+                      ) : (
+                        <>
+                          <button className="w-10 h-10 flex items-center justify-center bg-white/5 text-slate-400 hover:text-white rounded-2xl hover:bg-white/10 transition-all">
+                            <Edit2 size={16} />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onDelete(order.id); }} 
+                            className="w-10 h-10 flex items-center justify-center bg-red-500/5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
+                      <div className="w-10 h-10 flex items-center justify-center text-slate-800 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                        <ArrowRight size={20} />
+                      </div>
+                  </div>
+              </div>
+          ))}
+
+          {filteredOrders.length === 0 && (
+            <div className="py-32 flex flex-col items-center justify-center premium-glass rounded-[3rem] border-white/5">
+                <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
+                    <Box size={32} className="text-slate-700" />
+                </div>
+                <h3 className="text-xl font-display font-bold text-slate-500">空空如也</h3>
+                <p className="text-xs text-slate-600 mt-2">没有找到任何活跃的项目订单</p>
+            </div>
+          )}
       </div>
     </div>
   );

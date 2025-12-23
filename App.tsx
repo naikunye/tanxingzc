@@ -6,7 +6,7 @@ import { OrderList } from './components/OrderList';
 import { OrderForm } from './components/OrderForm';
 import { CustomerList } from './components/CustomerList';
 import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
-import { LayoutDashboard, ShoppingCart, Settings, Box, Cloud, Database, ExternalLink, ChevronDown, Users, Moon, Trash2, Menu, Plus, Sparkles, Droplets } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Settings, Box, Cloud, Database, ExternalLink, ChevronDown, Users, Moon, Trash2, Menu, Plus, Sparkles, Droplets, Globe, Compass, ShieldCheck } from 'lucide-react';
 import { initSupabase, fetchCloudOrders, saveCloudOrder, fetchCloudCustomers, saveCloudCustomer, deleteCloudCustomer } from './services/supabaseService';
 import { syncOrderLogistics } from './services/logisticsService';
 
@@ -187,103 +187,136 @@ const App: React.FC = () => {
         else { setView(target); if (target === 'list') setActiveFilter('All'); }
         setIsMobileMenuOpen(false);
       }}
-      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
+      className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
         view === target || (target === 'edit' && view === 'edit') || (target === 'add' && view === 'add')
-          ? 'bg-indigo-600 text-white shadow-lg'
+          ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20'
           : 'text-slate-400 hover:bg-white/5 hover:text-white'
       }`}
     >
-      <div className="flex items-center gap-3">
-        <Icon size={18} />
-        <span className="font-bold text-sm">{label}</span>
+      <div className="flex items-center gap-3.5">
+        <Icon size={18} className={`${view === target ? 'scale-110' : 'group-hover:scale-110'} transition-transform duration-300`} />
+        <span className="font-semibold text-[13px] tracking-tight">{label}</span>
       </div>
-      {count !== undefined && count > 0 && <span className="text-[10px] bg-white/10 text-white px-2 py-0.5 rounded-full font-bold">{count}</span>}
+      {count !== undefined && count > 0 && (
+        <span className="text-[10px] bg-white/10 text-white px-2 py-0.5 rounded-full font-bold tabular-nums">
+          {count}
+        </span>
+      )}
     </button>
   );
 
   const PurchaseLink = ({ href, label, sub }: { href: string, label: string, sub: string }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full px-4 py-2 rounded-lg text-slate-400 hover:bg-white/5 hover:text-indigo-400 transition-all group">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-slate-400 hover:bg-white/5 hover:text-indigo-400 transition-all group shrink-0">
         <div className="flex items-center gap-3">
-             <div className="w-5 h-5 bg-white rounded-full p-0.5 shadow-sm flex items-center justify-center">
+             <div className="w-6 h-6 bg-white/10 backdrop-blur-md rounded-lg p-1 border border-white/10 shadow-sm flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
                  <img src={`https://www.google.com/s2/favicons?domain=${sub}&sz=32`} alt="icon" className="w-full h-full object-contain" />
              </div>
-             <span className="text-[12px] font-bold">{label}</span>
+             <span className="text-[11px] font-medium tracking-tight truncate max-w-[120px]">{label}</span>
         </div>
-      <ExternalLink size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+      <ExternalLink size={10} className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
     </a>
   );
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row font-sans">
+    <div className="min-h-screen flex font-sans selection:bg-indigo-500/30">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      {isMobileMenuOpen && <div className="fixed inset-0 bg-black/60 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
+      {isMobileMenuOpen && <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
 
-      <aside className={`fixed md:sticky top-0 left-0 h-full w-72 glass-sidebar border-r border-white/5 z-40 transition-transform duration-300 md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-8 flex items-center gap-3 shrink-0">
-          <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg">
+      {/* 悬浮侧边栏 */}
+      <aside className={`fixed md:sticky top-4 left-4 h-[calc(100vh-2rem)] w-72 premium-glass rounded-[2.5rem] premium-shadow z-50 transition-all duration-500 md:translate-x-0 flex flex-col m-0 overflow-hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-[calc(100%+2rem)]'}`}>
+        <div className="p-10 flex items-center gap-4 shrink-0">
+          <div className="bg-indigo-600 p-3 rounded-2xl shadow-2xl shadow-indigo-600/40 rotate-3">
              <Box className="text-white" size={24} strokeWidth={2.5} />
           </div>
-          <div>
-              <h1 className="text-xl font-bold tracking-tight">探行科技</h1>
-              <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest mt-0.5">智能采集管理</p>
+          <div className="space-y-0.5">
+              <h1 className="text-xl font-display font-bold tracking-tight text-white leading-none">TANXING</h1>
+              <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-[0.2em]">Procure Intelligence</p>
           </div>
         </div>
         
-        <nav className="px-6 space-y-1.5 flex-1 overflow-y-auto">
-          <NavItem target="dashboard" icon={LayoutDashboard} label="概览中心" />
-          <NavItem target="list" icon={ShoppingCart} label="订单管理" />
-          <NavItem target="customers" icon={Users} label="客户管理" />
-          <NavItem target="trash" icon={Trash2} label="回收站" count={orders.filter(o => o.deleted).length} />
+        <nav className="px-6 space-y-2 flex-1 overflow-y-auto scrollbar-hide py-2">
+          <div className="px-4 mb-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">Main Menu</div>
+          <NavItem target="dashboard" icon={LayoutDashboard} label="指挥中心" />
+          <NavItem target="list" icon={ShoppingCart} label="订单队列" />
+          <NavItem target="customers" icon={Users} label="合伙人管理" />
+          <NavItem target="trash" icon={Trash2} label="归档/回收" count={orders.filter(o => o.deleted).length} />
           
-          <div className="pt-8 pb-4">
+          <div className="px-6 pt-10 pb-4">
             <button
                 onClick={() => { setEditingOrder(null); setView('add'); setIsMobileMenuOpen(false); }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg transition-all font-bold text-sm"
+                className="w-full flex items-center justify-center gap-2.5 px-4 py-4 bg-white text-indigo-950 hover:bg-indigo-50 rounded-2xl shadow-2xl transition-all duration-300 font-bold text-sm hover:-translate-y-1 active:translate-y-0"
             >
                 <Plus size={18} strokeWidth={3} />
-                <span>录入新订单</span>
+                <span>新建订单项目</span>
             </button>
           </div>
 
-          <div className="pt-4">
-            <button onClick={() => setIsPlatformsOpen(!isPlatformsOpen)} className="w-full px-4 mb-2 flex items-center justify-between group">
-                <span className="text-[10px] font-bold opacity-30 uppercase tracking-widest">常用采购平台</span>
-                <ChevronDown size={14} className={`opacity-30 transition-transform ${isPlatformsOpen ? 'rotate-180' : ''}`} />
+          <div className="px-6 pt-6 pb-8">
+            <button onClick={() => setIsPlatformsOpen(!isPlatformsOpen)} className="w-full px-4 mb-4 flex items-center justify-between group">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em]">快捷资源</span>
+                <ChevronDown size={14} className={`text-slate-500 transition-transform duration-300 ${isPlatformsOpen ? 'rotate-180' : ''}`} />
             </button>
-            <div className={`space-y-0.5 transition-all overflow-hidden ${isPlatformsOpen ? 'max-h-[600px]' : 'max-h-0'}`}>
+            <div className={`space-y-1.5 transition-all duration-500 overflow-hidden flex flex-col ${isPlatformsOpen ? 'max-h-none opacity-100' : 'max-h-0 opacity-0'}`}>
+              
+              <div className="px-4 py-2 text-[9px] font-bold text-indigo-400/60 uppercase tracking-widest flex items-center gap-2">
+                <Globe size={10} /> 跨境直采站
+              </div>
               <PurchaseLink href="https://www.aliexpress.com" label="AliExpress" sub="aliexpress.com" />
-              <PurchaseLink href="https://www.temu.com" label="Temu" sub="temu.com" />
-              <PurchaseLink href="https://www.amazon.com" label="Amazon" sub="amazon.com" />
+              <PurchaseLink href="https://www.alibaba.com" label="Alibaba.com" sub="alibaba.com" />
+              <PurchaseLink href="https://www.amazon.com" label="Amazon Global" sub="amazon.com" />
+              <PurchaseLink href="https://www.temu.com" label="Temu (US)" sub="temu.com" />
+              <PurchaseLink href="https://www.shein.com" label="SHEIN" sub="shein.com" />
+              
+              <div className="my-4 border-t border-white/5 mx-4"></div>
+              
+              <div className="px-4 py-2 text-[9px] font-bold text-slate-500/60 uppercase tracking-widest flex items-center gap-2">
+                <Compass size={10} /> 国内供应链
+              </div>
+              <PurchaseLink href="https://www.1688.com" label="1688 源头批发" sub="1688.com" />
+              <PurchaseLink href="https://www.taobao.com" label="淘宝/天猫" sub="taobao.com" />
+              <PurchaseLink href="https://www.jd.com" label="京东自营" sub="jd.com" />
+              <PurchaseLink href="https://www.pinduoduo.com" label="拼多多" sub="pinduoduo.com" />
             </div>
           </div>
         </nav>
 
-        <div className="p-6 border-t border-white/5">
-             <div className="px-4 py-3 rounded-xl border border-white/10 glass-card flex items-center gap-3">
-                {isCloudMode ? <Cloud size={18} className="text-emerald-400" /> : <Database size={18} className="text-slate-400" />}
-                <div className="text-left flex-1 font-bold text-xs">{isCloudMode ? '云端已同步' : '本地模式'}</div>
-                <Settings size={14} className="opacity-30" />
+        <div className="p-8 border-t border-white/5 shrink-0 bg-white/5">
+             <div className="px-5 py-4 rounded-[1.25rem] border border-white/10 premium-glass flex items-center gap-4 group cursor-pointer transition-all hover:bg-white/10">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                   {isCloudMode ? <ShieldCheck size={16} className="text-emerald-400" /> : <Database size={16} className="text-slate-400" />}
+                </div>
+                <div className="flex-1">
+                   <p className="text-[11px] font-bold text-white">{isCloudMode ? '安全云端就绪' : '本地离线加密'}</p>
+                   <p className="text-[9px] text-slate-500 font-medium">System Secure</p>
+                </div>
+                <Settings size={14} className="text-slate-500 group-hover:rotate-90 transition-transform duration-700" />
             </div>
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto flex flex-col">
-        <header className="glass-card border-b border-white/5 px-8 py-5 sticky top-0 z-20 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-                <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-2 text-slate-400"><Menu size={24} /></button>
-                <h2 className="text-lg font-bold tracking-tight uppercase tracking-wider">
-                    {view === 'add' || view === 'edit' ? (editingOrder ? '编辑订单' : '录入新订单') : view === 'list' ? '订单管理' : view === 'customers' ? '客户管理' : view === 'trash' ? '回收站' : '系统看板'}
-                </h2>
+      <main className="flex-1 overflow-auto flex flex-col p-4 md:p-8 space-y-8 animate-slide-up">
+        {/* 顶部通栏 */}
+        <header className="flex justify-between items-center bg-transparent z-20">
+            <div className="flex items-center gap-6">
+                <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-3 premium-glass rounded-2xl text-slate-400"><Menu size={24} /></button>
+                <div className="space-y-1">
+                    <h2 className="text-3xl font-display font-bold tracking-tight text-white capitalize">
+                        {view === 'add' || view === 'edit' ? (editingOrder ? 'Edit Order' : 'New Project') : view === 'list' ? 'Order Queue' : view === 'customers' ? 'Partners' : view === 'trash' ? 'Archive' : 'Overview'}
+                    </h2>
+                    <p className="text-xs text-slate-500 font-medium tracking-wide">Procurement Intelligence Operating System</p>
+                </div>
             </div>
-            <div className="flex items-center gap-1 bg-black/10 dark:bg-white/5 p-1 rounded-xl border border-white/10">
-                <button onClick={() => applyTheme('dark')} className={`p-2 rounded-lg transition-all ${settings.theme === 'dark' ? 'bg-indigo-600 text-white' : 'opacity-40 hover:opacity-100'}`} title="经典暗黑"><Moon size={16} /></button>
-                <button onClick={() => applyTheme('aurora')} className={`p-2 rounded-lg transition-all ${settings.theme === 'aurora' ? 'bg-indigo-600 text-white' : 'opacity-40 hover:opacity-100'}`} title="极光磨砂"><Sparkles size={16} /></button>
-                <button onClick={() => applyTheme('crystal')} className={`p-2 rounded-lg transition-all ${settings.theme === 'crystal' ? 'bg-white text-indigo-600' : 'opacity-40 hover:opacity-100'}`} title="冰晶磨砂"><Droplets size={16} /></button>
+            
+            <div className="flex items-center gap-3 premium-glass p-2 rounded-[1.5rem] border-white/5">
+                <button onClick={() => applyTheme('dark')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-500 ${settings.theme === 'dark' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}><Moon size={18} /></button>
+                <button onClick={() => applyTheme('aurora')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-500 ${settings.theme === 'aurora' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}><Sparkles size={18} /></button>
+                <button onClick={() => applyTheme('crystal')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-500 ${settings.theme === 'crystal' ? 'bg-white text-indigo-950 shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}><Droplets size={18} /></button>
             </div>
         </header>
 
-        <div className="p-4 md:p-8 flex-1">
+        {/* 内容区域 */}
+        <div className="flex-1 max-w-[1600px] mx-auto w-full">
           {view === 'dashboard' && <Dashboard orders={orders.filter(o => !o.deleted)} warningRules={settings.warningRules} onNavigate={(f) => { setActiveFilter(f); setView('list'); }} />}
           {view === 'list' && <OrderList orders={orders.filter(o => !o.deleted)} initialFilter={activeFilter} warningRules={settings.warningRules} onEdit={handleEditOrder} onDelete={handleDeleteOrder} onSync={handleSyncLogistics} isSyncing={syncStatus === 'syncing'} onStatusChange={handleStatusChange} />}
           {view === 'trash' && <OrderList orders={orders.filter(o => o.deleted)} warningRules={settings.warningRules} onEdit={() => {}} onDelete={() => {}} onRestore={handleRestoreOrder} isTrash={true} onSync={() => {}} isSyncing={false} />}

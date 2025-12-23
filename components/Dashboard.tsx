@@ -13,7 +13,7 @@ import {
   Label
 } from 'recharts';
 import { Order, OrderStatus, OrderStatusCN, WarningRules } from '../types';
-import { DollarSign, Clock, CheckCircle2, ShoppingBag } from 'lucide-react';
+import { DollarSign, Clock, CheckCircle2, ShoppingBag, TrendingUp, Briefcase } from 'lucide-react';
 
 interface DashboardProps {
   orders: Order[];
@@ -38,53 +38,121 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, warningRules, onNa
     value: orders.filter(o => o.status === status).length
   })).filter(d => d.value > 0);
 
-  const StatCard = ({ icon: Icon, title, value, subtext, onClick }: any) => (
+  const StatCard = ({ icon: Icon, title, value, subtext, onClick, variant = 'indigo' }: any) => (
     <div 
       onClick={onClick}
-      className={`glass-card p-6 rounded-2xl flex items-start space-x-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer`}
+      className={`group relative p-8 premium-glass rounded-[2.5rem] border-white/5 transition-all duration-500 hover:-translate-y-2 cursor-pointer overflow-hidden premium-shadow hover:border-white/20`}
     >
-      <div className={`p-3 rounded-xl bg-indigo-600/10 text-indigo-400`}>
-        <Icon size={24} />
+      <div className={`absolute -top-10 -right-10 w-32 h-32 bg-${variant}-500/10 blur-3xl rounded-full group-hover:scale-150 transition-transform duration-700`} />
+      
+      <div className="flex justify-between items-start mb-6">
+        <div className={`p-4 rounded-2xl bg-${variant}-500/10 text-${variant}-400 group-hover:scale-110 transition-transform`}>
+          <Icon size={24} />
+        </div>
+        <TrendingUp size={16} className="text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">{title}</p>
-        <h3 className="text-2xl font-bold tracking-tight">{value}</h3>
-        <p className="text-[10px] opacity-40 mt-1">{subtext}</p>
+      
+      <div className="space-y-1">
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{title}</p>
+        <h3 className="text-4xl font-display font-bold tracking-tighter text-white tabular-nums">{value}</h3>
+        <p className="text-[10px] font-medium text-slate-500 pt-2 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500/50"></span>
+            {subtext}
+        </p>
       </div>
     </div>
   );
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={ShoppingBag} title="订单总数" value={stats.totalOrders} subtext="累计所有记录" onClick={() => onNavigate && onNavigate('All')} />
-        <StatCard icon={Clock} title="待采购" value={stats.pending} subtext="需尽快下单" onClick={() => onNavigate && onNavigate(OrderStatus.PENDING)} />
-        <StatCard icon={CheckCircle2} title="活跃订单" value={stats.active} subtext="流程流转中" />
-        <StatCard icon={DollarSign} title="累计金额" value={`$${stats.totalSpent.toLocaleString()}`} subtext="USD 统计" />
+    <div className="space-y-10 animate-slide-up pb-12">
+      {/* 核心指标 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard icon={Briefcase} title="项目总量" value={stats.totalOrders} subtext="活跃采集项目" onClick={() => onNavigate && onNavigate('All')} variant="indigo" />
+        <StatCard icon={Clock} title="待采购任务" value={stats.pending} subtext="高优先级队列" onClick={() => onNavigate && onNavigate(OrderStatus.PENDING)} variant="amber" />
+        <StatCard icon={CheckCircle2} title="运营中项目" value={stats.active} subtext="全链路流转中" variant="emerald" />
+        <StatCard icon={DollarSign} title="成交资产" value={`$${Math.floor(stats.totalSpent).toLocaleString()}`} subtext="USD 价值统计" variant="indigo" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-card p-8 rounded-3xl h-[400px]">
-          <h3 className="text-sm font-bold uppercase tracking-widest mb-8 opacity-50">订单状态分布</h3>
-          <ResponsiveContainer width="100%" height="100%">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* 圆形分布图 */}
+        <div className="premium-glass p-10 rounded-[3rem] h-[480px] border-white/5 relative overflow-hidden group">
+          <div className="flex justify-between items-center mb-10">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Status Allocation</h3>
+              <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+          </div>
+          <ResponsiveContainer width="100%" height="80%">
             <PieChart>
-              <Pie data={statusData} cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={5} dataKey="value" stroke="none">
+              <Pie 
+                data={statusData} 
+                cx="50%" 
+                cy="50%" 
+                innerRadius={110} 
+                outerRadius={150} 
+                paddingAngle={8} 
+                dataKey="value" 
+                stroke="none"
+              >
                 {statusData.map((_, index) => <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}
-                <Label value={stats.totalOrders} position="center" className="fill-current font-bold" style={{ fontSize: '24px' }} />
+                <Label 
+                    value={stats.totalOrders} 
+                    position="center" 
+                    content={({viewBox}: any) => {
+                        const {cx, cy} = viewBox;
+                        return (
+                            <g>
+                                <text x={cx} y={cy - 10} textAnchor="middle" dominantBaseline="middle" className="fill-white font-display font-bold text-5xl tracking-tighter">
+                                    {stats.totalOrders}
+                                </text>
+                                <text x={cx} y={cy + 30} textAnchor="middle" dominantBaseline="middle" className="fill-slate-600 font-bold text-[10px] uppercase tracking-widest">
+                                    Total Items
+                                </text>
+                            </g>
+                        )
+                    }}
+                />
               </Pie>
-              <Tooltip />
+              <Tooltip 
+                contentStyle={{backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', color: '#fff'}}
+                itemStyle={{fontSize: '12px', fontWeight: 'bold'}}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="glass-card p-8 rounded-3xl h-[400px]">
-          <h3 className="text-sm font-bold uppercase tracking-widest mb-8 opacity-50">数据趋势</h3>
-          <ResponsiveContainer width="100%" height="100%">
+        {/* 柱状趋势图 */}
+        <div className="premium-glass p-10 rounded-[3rem] h-[480px] border-white/5 group">
+          <div className="flex justify-between items-center mb-10">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Flow Dynamics</h3>
+              <div className="flex gap-1">
+                  <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                  <span className="w-1 h-1 rounded-full bg-white/40"></span>
+                  <span className="w-1 h-1 rounded-full bg-white/60"></span>
+              </div>
+          </div>
+          <ResponsiveContainer width="100%" height="80%">
             <BarChart data={statusData}>
-              <XAxis dataKey="name" axisLine={false} tickLine={false} />
+              <XAxis 
+                dataKey="name" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{fill: '#475569', fontSize: 10, fontWeight: 700}}
+                dy={20}
+              />
               <YAxis hide />
-              <Tooltip cursor={{fill: 'transparent'}} />
-              <Bar dataKey="value" fill="#6366f1" radius={[10, 10, 0, 0]} barSize={40} />
+              <Tooltip 
+                cursor={{fill: 'rgba(255,255,255,0.03)', radius: 10}} 
+                contentStyle={{backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', color: '#fff'}}
+              />
+              <Bar 
+                dataKey="value" 
+                fill="#6366f1" 
+                radius={[15, 15, 15, 15]} 
+                barSize={50} 
+              >
+                {statusData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

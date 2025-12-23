@@ -1,19 +1,13 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 
-// 架构优化：不直接在文件顶层实例化，防止加载阶段崩溃
-let genAIInstance: any = null;
-
-const getAI = () => {
-  if (!genAIInstance) {
-    const apiKey = process.env.API_KEY || (window as any).process?.env?.API_KEY;
-    genAIInstance = new GoogleGenAI({ apiKey: apiKey });
-  }
-  return genAIInstance;
-};
+// Guideline: Create a new GoogleGenAI instance right before making an API call 
+// to ensure it always uses the most up-to-date API key from the environment.
 
 export const parseOrderText = async (text: string): Promise<any> => {
   try {
-    const ai = getAI();
+    // Correct initialization as per guidelines: using named parameter and process.env.API_KEY
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
       contents: `Input text to parse: "${text}"`,
@@ -45,6 +39,7 @@ export const parseOrderText = async (text: string): Promise<any> => {
       }
     });
     
+    // Access text property directly (not a method) as per guidelines
     if (response.text) {
         return JSON.parse(response.text);
     }
@@ -58,7 +53,7 @@ export const parseOrderText = async (text: string): Promise<any> => {
 export const parseOrderImage = async (base64Image: string): Promise<any> => {
     const base64Data = base64Image.split(',')[1] || base64Image;
     try {
-        const ai = getAI();
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: {
@@ -109,7 +104,7 @@ export const parseOrderImage = async (base64Image: string): Promise<any> => {
 
 export const generateStatusUpdate = async (order: any): Promise<string> => {
     try {
-        const ai = getAI();
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Order Details: Item: ${order.itemName}, Status: ${order.status}`,
@@ -125,7 +120,7 @@ export const generateStatusUpdate = async (order: any): Promise<string> => {
 
 export const parseNaturalLanguageSearch = async (query: string): Promise<any> => {
   try {
-     const ai = getAI();
+     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
      const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Input Query: "${query}"`,
