@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Order, OrderStatus, OrderStatusCN, Customer } from '../types';
 import { parseOrderText, parseOrderImage } from '../services/geminiService';
-import { Save, X, Loader2, Image as ImageIcon, Sparkles, Box, DollarSign, Truck, ClipboardList, Calendar, Hash, Globe, UserPlus, Trash2, Upload, RefreshCw } from 'lucide-react';
+import { Save, X, Loader2, Image as ImageIcon, Sparkles, Box, DollarSign, Truck, ClipboardList, Calendar, Hash, Globe, UserPlus, Trash2, Upload, RefreshCw, ExternalLink } from 'lucide-react';
 
 interface OrderFormProps {
   initialOrder?: Order | null;
@@ -90,6 +90,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
       alert('AI 解析失败，请手动录入'); 
     } finally { 
       setIsAiLoading(false); 
+    }
+  };
+
+  const handleTrackClick = (num: string) => {
+    if (num) {
+      window.open(`https://www.17track.net/zh-cn/track?nums=${num}`, '_blank');
     }
   };
 
@@ -242,7 +248,19 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                         </div>
                         <div className="space-y-3">
                             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">平台物流追踪号</label>
-                            <input type="text" name="supplierTrackingNumber" value={formData.supplierTrackingNumber} onChange={handleChange} className="w-full px-6 py-4.5 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="采购网站原始单号" />
+                            <div className="relative">
+                                <input type="text" name="supplierTrackingNumber" value={formData.supplierTrackingNumber} onChange={handleChange} className="w-full px-6 py-4.5 pr-14 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="采购网站原始单号" />
+                                {formData.supplierTrackingNumber && (
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handleTrackClick(formData.supplierTrackingNumber!)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all"
+                                        title="追踪此单号"
+                                    >
+                                        <ExternalLink size={16} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -289,7 +307,19 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
 
                     <div className="space-y-3">
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">国际转运/自发货单号</label>
-                        <input type="text" name="trackingNumber" value={formData.trackingNumber} onChange={handleChange} className="w-full px-6 py-4.5 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="输入用于提供给买家的物流单号" />
+                        <div className="relative">
+                            <input type="text" name="trackingNumber" value={formData.trackingNumber} onChange={handleChange} className="w-full px-6 py-4.5 pr-14 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="输入用于提供给买家的物流单号" />
+                            {formData.trackingNumber && (
+                                <button 
+                                    type="button" 
+                                    onClick={() => handleTrackClick(formData.trackingNumber!)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all"
+                                    title="追踪此单号"
+                                >
+                                    <ExternalLink size={16} />
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     <div className="space-y-3">
