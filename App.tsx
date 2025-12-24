@@ -6,7 +6,7 @@ import { OrderList } from './components/OrderList';
 import { OrderForm } from './components/OrderForm';
 import { CustomerList } from './components/CustomerList';
 import { ToastContainer, ToastMessage, ToastType } from './components/Toast';
-import { LayoutDashboard, ShoppingCart, Settings, Box, Cloud, Database, ExternalLink, ChevronDown, Users, Moon, Trash2, Menu, Plus, Sparkles, Droplets, Globe, Compass, ShieldCheck, Download, Upload, FileJson, DatabaseBackup } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Settings, Box, Cloud, Database, ExternalLink, ChevronDown, Users, Moon, Trash2, Menu, Plus, Sparkles, Droplets, Globe, Compass, ShieldCheck, Download, Upload, FileJson, DatabaseBackup, Sun } from 'lucide-react';
 import { initSupabase, fetchCloudOrders, saveCloudOrder, fetchCloudCustomers, saveCloudCustomer, deleteCloudCustomer } from './services/supabaseService';
 import { syncOrderLogistics } from './services/logisticsService';
 import { exportToJSON, parseJSONFile } from './services/dataService';
@@ -44,6 +44,21 @@ const App: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
   const backupInputRef = useRef<HTMLInputElement>(null);
 
+  // Robust theme applying function
+  const applyTheme = (theme: ThemeType) => {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (theme === 'crystal') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+    setSettings(prev => {
+      const updated = { ...prev, theme };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   useEffect(() => {
     const savedSettings = localStorage.getItem(SETTINGS_KEY);
     if (savedSettings) {
@@ -67,17 +82,6 @@ const App: React.FC = () => {
         applyTheme('dark');
     }
   }, []);
-
-  const applyTheme = (theme: ThemeType) => {
-      document.documentElement.setAttribute('data-theme', theme);
-      if (theme === 'crystal') {
-          document.documentElement.classList.remove('dark');
-      } else {
-          document.documentElement.classList.add('dark');
-      }
-      setSettings(prev => ({ ...prev, theme }));
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings, theme }));
-  };
 
   const showToast = (message: string, type: ToastType = 'info') => {
       const id = crypto.randomUUID();
@@ -226,6 +230,7 @@ const App: React.FC = () => {
                 if (data.settings) {
                     setSettings(data.settings);
                     localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings));
+                    if (data.settings.theme) applyTheme(data.settings.theme);
                 }
                 showToast('全量数据恢复成功', 'success');
             }
@@ -448,9 +453,27 @@ const App: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-3 premium-glass p-2 rounded-[1.5rem] border-white/5">
-                <button onClick={() => applyTheme('dark')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-500 ${settings.theme === 'dark' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}><Moon size={18} /></button>
-                <button onClick={() => applyTheme('aurora')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-500 ${settings.theme === 'aurora' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}><Sparkles size={18} /></button>
-                <button onClick={() => applyTheme('crystal')} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-500 ${settings.theme === 'crystal' ? 'bg-white text-indigo-950 shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}><Droplets size={18} /></button>
+                <button 
+                  onClick={() => applyTheme('dark')} 
+                  title="Dark Mode"
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-500 ${settings.theme === 'dark' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                >
+                  <Moon size={18} />
+                </button>
+                <button 
+                  onClick={() => applyTheme('aurora')} 
+                  title="Aurora Mode"
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-500 ${settings.theme === 'aurora' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                >
+                  <Sparkles size={18} />
+                </button>
+                <button 
+                  onClick={() => applyTheme('crystal')} 
+                  title="Crystal Light Mode"
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-500 ${settings.theme === 'crystal' ? 'bg-white text-indigo-950 shadow-lg' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}
+                >
+                  <Sun size={18} />
+                </button>
             </div>
         </header>
 

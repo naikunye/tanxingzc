@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Order, OrderStatus, OrderStatusCN } from '../types';
-import { Edit2, Trash2, Search, Box, CloudLightning, Clock, DollarSign, ExternalLink, MessageSquare, Hash, Copy, CopyPlus, Download, Upload, FileJson, Globe } from 'lucide-react';
+import { Edit2, Trash2, Search, Box, CloudLightning, Clock, DollarSign, ExternalLink, MessageSquare, Hash, Copy, CopyPlus, Download, Upload, FileJson, Globe, LayoutGrid, List as ListIcon, Columns } from 'lucide-react';
 import { exportToCSV, parseCSV } from '../services/csvService';
 import { exportToJSON, parseJSONFile } from '../services/dataService';
 
@@ -19,6 +19,7 @@ interface OrderListProps {
 
 export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onDuplicate, onRestore, onSync, onImport, isSyncing, initialFilter = 'All', isTrash = false }) => {
   const [filter, setFilter] = useState<OrderStatus | 'All'>(initialFilter);
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
   const [searchTerm, setSearchTerm] = useState('');
   const csvInputRef = useRef<HTMLInputElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
@@ -101,6 +102,74 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
     return <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-bold border uppercase tracking-wider ${style}`}>{OrderStatusCN[status]}</span>;
   };
 
+  const renderKanbanView = () => {
+    const statuses = Object.values(OrderStatus);
+    return (
+      <div className="flex gap-6 overflow-x-auto pb-10 pt-4 scrollbar-hide -mx-8 px-8">
+        {statuses.map(status => {
+          const colOrders = filteredOrders.filter(o => o.status === status);
+          return (
+            <div key={status} className="flex-shrink-0 w-80 flex flex-col gap-4">
+              <div className="flex items-center justify-between px-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${
+                    status === OrderStatus.PENDING ? 'bg-red-500' :
+                    status === OrderStatus.PURCHASED ? 'bg-indigo-500' :
+                    status === OrderStatus.READY_TO_SHIP ? 'bg-purple-500' :
+                    status === OrderStatus.SHIPPED ? 'bg-blue-500' :
+                    status === OrderStatus.DELIVERED ? 'bg-emerald-500' : 'bg-slate-500'
+                  }`} />
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{OrderStatusCN[status]}</h3>
+                </div>
+                <span className="text-[10px] font-bold text-slate-600 bg-white/5 px-2 py-0.5 rounded-md">{colOrders.length}</span>
+              </div>
+              
+              <div className="flex flex-col gap-4 min-h-[500px] p-2 rounded-[2rem] bg-slate-900/10 border border-white/5">
+                {colOrders.map(order => (
+                  <div key={order.id} onClick={() => onEdit(order)} className="group p-4 premium-glass rounded-2xl border-white/5 hover:border-white/15 transition-all cursor-pointer space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-slate-950/50 flex items-center justify-center shrink-0 overflow-hidden border border-white/5">
+                        {order.imageUrl ? (
+                          <img src={order.imageUrl} alt={order.itemName} className="w-full h-full object-cover" />
+                        ) : (
+                          <Box size={20} className="text-slate-800" strokeWidth={1} />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-bold text-slate-100 truncate group-hover:text-indigo-400 transition-colors">{order.itemName}</p>
+                        <p className="text-[9px] text-slate-500 truncate mt-0.5">{order.buyerAddress}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                      <div className="flex items-center gap-1.5">
+                        <DollarSign size={10} className="text-indigo-500" />
+                        <span className="text-[10px] font-bold text-slate-300">${(order.priceUSD * order.quantity).toFixed(2)}</span>
+                      </div>
+                      <span className="text-[9px] font-black text-slate-700 uppercase tracking-tighter">QTY: {order.quantity}</span>
+                    </div>
+
+                    <div className="flex justify-end gap-1.5 pt-1">
+                      <button onClick={(e) => { e.stopPropagation(); onDelete(order.id); }} className="p-1.5 text-slate-700 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all">
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {colOrders.length === 0 && (
+                  <div className="flex-1 flex flex-col items-center justify-center opacity-20 py-20">
+                    <Box size={32} strokeWidth={1} />
+                    <p className="text-[8px] font-bold uppercase tracking-widest mt-2">No Items</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-8 animate-slide-up pb-20">
       <input type="file" ref={csvInputRef} onChange={handleCSVImport} accept=".csv" className="hidden" />
@@ -122,6 +191,15 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
         <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-center xl:justify-end">
             {!isTrash && (
               <>
+                <div className="flex p-1.5 premium-glass rounded-2xl border-white/5 bg-slate-900/40">
+                  <button onClick={() => setViewMode('list')} className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+                    <ListIcon size={16} />
+                  </button>
+                  <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-xl transition-all ${viewMode === 'kanban' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+                    <Columns size={16} />
+                  </button>
+                </div>
+
                 <div className="flex p-1.5 premium-glass rounded-2xl border-white/5 bg-slate-900/40">
                   {['All', ...Object.values(OrderStatus)].map((s: any) => (
                       <button key={s} onClick={() => setFilter(s)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filter === s ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}>
@@ -158,7 +236,10 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      {viewMode === 'kanban' && !isTrash ? (
+        renderKanbanView()
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
           {filteredOrders.length > 0 ? filteredOrders.map(order => (
             <div key={order.id} onClick={() => !isTrash && onEdit(order)} className="group relative p-6 md:p-8 premium-glass rounded-[2.5rem] border-white/5 hover:border-white/15 transition-all cursor-pointer flex flex-col lg:flex-row items-center gap-10">
                 
@@ -281,7 +362,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                 <p className="text-xs text-slate-600 mt-2 uppercase tracking-widest">目前没有任何项目记录</p>
             </div>
           )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

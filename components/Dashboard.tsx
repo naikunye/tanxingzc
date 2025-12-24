@@ -42,7 +42,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate }) => {
         </div>
         <div className="space-y-1">
             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{title}</p>
-            <h3 className="text-6xl font-display font-black text-white tabular-nums tracking-tighter">{value}</h3>
+            <h3 className="text-6xl font-display font-black text-white tabular-nums tracking-tighter transition-colors">{value}</h3>
         </div>
         <div className="mt-6 flex items-center gap-2">
             <span className={`w-1.5 h-1.5 rounded-full bg-${variant}-500`}></span>
@@ -81,23 +81,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate }) => {
                       outerRadius={150} 
                       paddingAngle={8} 
                       stroke="none"
-                      activeShape={false} // Disable default active shape to prevent white box
+                      activeShape={false}
                       isAnimationActive={true}
                     >
                         {statusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} style={{ outline: 'none' }} />)}
                     </Pie>
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: '#0f172a', 
-                        border: 'none', 
+                        backgroundColor: 'var(--bg-color)', 
+                        border: '1px solid var(--glass-border)', 
                         borderRadius: '16px', 
                         fontSize: '12px', 
                         padding: '12px 20px', 
                         boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-                        color: '#f8fafc'
+                        color: 'var(--text-primary)'
                       }} 
-                      itemStyle={{ color: '#f1f5f9' }}
-                      labelStyle={{ color: '#94a3b8' }}
+                      itemStyle={{ color: 'var(--text-primary)' }}
+                      labelStyle={{ color: 'var(--text-secondary)' }}
                     />
                 </PieChart>
             </ResponsiveContainer>
@@ -122,20 +122,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ orders, onNavigate }) => {
                     <Tooltip 
                       cursor={{ fill: 'rgba(255,255,255,0.02)' }} 
                       contentStyle={{ 
-                        backgroundColor: '#0f172a', 
-                        border: 'none', 
+                        backgroundColor: 'var(--bg-color)', 
+                        border: '1px solid var(--glass-border)', 
                         borderRadius: '16px',
                         boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-                        color: '#f8fafc'
+                        color: 'var(--text-primary)'
                       }} 
-                      itemStyle={{ color: '#f1f5f9' }}
-                      labelStyle={{ color: '#94a3b8' }}
+                      itemStyle={{ color: 'var(--text-primary)' }}
+                      labelStyle={{ color: 'var(--text-secondary)' }}
                     />
                     <Bar 
                       dataKey="value" 
                       radius={[20, 20, 20, 20]} 
                       barSize={40}
-                      activeBar={false} // Disable default active bar focus/outline
+                      activeBar={false}
                     >
                         {statusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} style={{ outline: 'none' }} />)}
                     </Bar>
