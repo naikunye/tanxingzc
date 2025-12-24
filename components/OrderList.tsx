@@ -236,13 +236,13 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                         )}
                     </div>
                     <div className="space-y-0.5">
-                        <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest text-right">国际运单</p>
+                        <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest text-right">TIKTOK自发货单号</p>
                         {/* 由于数据反转，国际运单现在对应 supplierTrackingNumber */}
                         {order.supplierTrackingNumber ? (
                           <button 
                             onClick={(e) => handleTrackClick(e, order.supplierTrackingNumber!)}
                             className="w-full text-[11px] text-right font-mono truncate text-indigo-400/80 hover:text-indigo-400 hover:underline transition-all block"
-                            title="点击追踪国际运单"
+                            title="点击追踪 TIKTOK 自发货单号"
                           >
                             {order.supplierTrackingNumber}
                           </button>

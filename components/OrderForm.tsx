@@ -243,7 +243,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                             <input type="text" name="platform" value={formData.platform} onChange={handleChange} className="w-full px-6 py-4.5 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="如: AliExpress, 1688" />
                         </div>
                         <div className="space-y-3">
-                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">平台物流追踪号</label>
+                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">采购平台物流追踪号</label>
                             <div className="relative">
                                 {/* 根据用户导入数据现状，此处改为映射到 trackingNumber (原 Supplier Tracking 数据现在在该字段) */}
                                 <input type="text" name="trackingNumber" value={formData.trackingNumber} onChange={handleChange} className="w-full px-6 py-4.5 pr-14 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="采购网站原始单号" />
@@ -303,7 +303,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                     </div>
 
                     <div className="space-y-3">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">国际转运/自发货单号</label>
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">TIKTOK自发货单号</label>
                         <div className="relative">
                             {/* 根据用户导入数据现状，此处改为映射到 supplierTrackingNumber (原 Buyer Tracking 数据现在在该字段) */}
                             <input type="text" name="supplierTrackingNumber" value={formData.supplierTrackingNumber} onChange={handleChange} className="w-full px-6 py-4.5 pr-14 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="输入用于提供给买家的物流单号" />
