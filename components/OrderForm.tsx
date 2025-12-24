@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Order, OrderStatus, OrderStatusCN, Customer } from '../types';
 import { parseOrderText, parseOrderImage } from '../services/geminiService';
@@ -59,7 +58,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
       const base64String = reader.result as string;
       setFormData(prev => ({ ...prev, imageUrl: base64String }));
       
-      // 只有在新建模式下才询问是否 AI 识别
       if (!initialOrder && confirm('检测到图片上传，是否尝试让 AI 自动识别订单内容？')) {
         setIsAiLoading(true);
         try {
@@ -124,7 +122,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
 
   return (
     <div className="max-w-[1200px] mx-auto py-4 animate-slide-up">
-      {/* 隐藏的文件输入框 */}
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -136,7 +133,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
       <div className="premium-glass rounded-[3rem] border-white/5 overflow-hidden shadow-2xl">
         <div className="p-10 md:p-16 space-y-12">
           
-          {/* AI 快捷解析区 - 仅在新建时显示 */}
           {!initialOrder && (
             <div className="bg-slate-900/40 rounded-[2rem] p-8 border border-white/5 flex flex-col md:flex-row gap-6 items-center">
               <div className="flex-1 w-full">
@@ -161,7 +157,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                   type="button" 
                   onClick={handleAiParse}
                   disabled={isAiLoading || !aiInput}
-                  className="flex items-center justify-center gap-2 p-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-xl transition-all disabled:opacity-30 group"
+                  className="flex items-center justify-center gap-2 p-4 bg-indigo-600 hover:bg-indigo-50 text-white rounded-2xl shadow-xl transition-all disabled:opacity-30 group"
                 >
                   {isAiLoading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} className="group-hover:rotate-12 transition-transform" />}
                   <span className="text-[10px] font-bold uppercase tracking-widest">智能识别</span>
@@ -172,12 +168,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-16">
             
-            {/* 左侧：采购详细信息 */}
             <div className="space-y-8">
                 <SectionHeader icon={ClipboardList} title="采购详细信息" subtitle="Procurement Details" />
                 
                 <div className="space-y-6">
-                    {/* 商品图上传与预览区 */}
                     <div className="space-y-3">
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">商品缩略图</label>
                         <div className="flex items-start gap-6">
@@ -276,7 +270,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                 </div>
             </div>
 
-            {/* 右侧：收货与物流信息 */}
             <div className="space-y-8">
                 <SectionHeader icon={Truck} title="收货与物流信息" subtitle="Delivery & Logistics" />
 
@@ -323,8 +316,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                     </div>
 
                     <div className="space-y-3">
-                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">外部交易平台单号</label>
-                        <input type="text" name="platformOrderId" value={formData.platformOrderId} onChange={handleChange} className="w-full px-6 py-4.5 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="如 TikTok / Amazon 订单号" />
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">TIKTOK平台单号</label>
+                        <input type="text" name="platformOrderId" value={formData.platformOrderId} onChange={handleChange} className="w-full px-6 py-4.5 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="输入 TIKTOK 订单号" />
                     </div>
                 </div>
 
