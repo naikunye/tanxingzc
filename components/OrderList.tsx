@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Order, OrderStatus, OrderStatusCN } from '../types';
-import { Edit2, Trash2, Search, Box, CloudLightning, Clock, DollarSign, ExternalLink, MessageSquare, Hash, Copy, CopyPlus, Download, Upload, FileJson } from 'lucide-react';
+import { Edit2, Trash2, Search, Box, CloudLightning, Clock, DollarSign, ExternalLink, MessageSquare, Hash, Copy, CopyPlus, Download, Upload, FileJson, Globe } from 'lucide-react';
 import { exportToCSV, parseCSV } from '../services/csvService';
 import { exportToJSON, parseJSONFile } from '../services/dataService';
 
@@ -32,7 +32,8 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
     return o.itemName.toLowerCase().includes(search) || 
            o.buyerAddress.toLowerCase().includes(search) || 
            o.clientOrderId?.toLowerCase().includes(search) || 
-           (o.notes && o.notes.toLowerCase().includes(search));
+           (o.notes && o.notes.toLowerCase().includes(search)) ||
+           (o.platform && o.platform.toLowerCase().includes(search));
   });
 
   const handleExportCSV = () => {
@@ -112,7 +113,7 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-500" size={16} />
             <input 
               type="text" 
-              placeholder="搜索项目关键词、单号或备注..." 
+              placeholder="搜索项目关键词、单号、平台或备注..." 
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)} 
               className="w-full pl-16 pr-6 py-4 bg-[#0a0f1d]/60 border border-white/5 rounded-2xl text-sm text-slate-200 placeholder:text-slate-600 focus:border-indigo-500/30 outline-none transition-all" 
@@ -180,7 +181,15 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                 <div className="flex-1 min-w-0 space-y-4 text-center lg:text-left">
                     <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                         <h3 className="text-xl font-display font-bold text-slate-100 truncate max-w-sm">{order.itemName}</h3>
-                        <div className="flex justify-center lg:justify-start">{getStatusBadge(order.status)}</div>
+                        <div className="flex flex-wrap justify-center lg:justify-start items-center gap-2">
+                            {getStatusBadge(order.status)}
+                            {order.platform && (
+                              <span className="px-2.5 py-0.5 rounded-lg text-[9px] font-black bg-indigo-500/5 text-slate-400 border border-white/5 uppercase tracking-wider flex items-center gap-1.5 group-hover:text-indigo-400/80 transition-colors">
+                                <Globe size={10} className="text-indigo-400/40" />
+                                {order.platform}
+                              </span>
+                            )}
+                        </div>
                     </div>
                     
                     <div className="flex flex-wrap justify-center lg:justify-start items-center gap-5 text-[11px] font-bold text-slate-500 uppercase tracking-tight">
