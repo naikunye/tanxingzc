@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Order, OrderStatus, OrderStatusCN } from '../types';
 import { Edit2, Trash2, Search, Box, CloudLightning, Clock, DollarSign, ExternalLink, MessageSquare, Hash, Copy, CopyPlus, Download, Upload, FileJson, Globe } from 'lucide-react';
@@ -223,13 +222,14 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                 <div className="w-full lg:w-48 space-y-4 shrink-0 pr-4">
                     <div className="space-y-0.5">
                         <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest text-right">商家物流</p>
-                        {order.supplierTrackingNumber ? (
+                        {/* 由于数据反转，商家物流现在对应 trackingNumber */}
+                        {order.trackingNumber ? (
                           <button 
-                            onClick={(e) => handleTrackClick(e, order.supplierTrackingNumber!)}
+                            onClick={(e) => handleTrackClick(e, order.trackingNumber!)}
                             className="w-full text-[11px] text-right font-mono truncate text-slate-400 hover:text-indigo-400 hover:underline transition-all block"
                             title="点击追踪商家物流"
                           >
-                            {order.supplierTrackingNumber}
+                            {order.trackingNumber}
                           </button>
                         ) : (
                           <p className="text-[11px] text-right font-mono truncate text-slate-400">待录入</p>
@@ -237,13 +237,14 @@ export const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, 
                     </div>
                     <div className="space-y-0.5">
                         <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest text-right">国际运单</p>
-                        {order.trackingNumber ? (
+                        {/* 由于数据反转，国际运单现在对应 supplierTrackingNumber */}
+                        {order.supplierTrackingNumber ? (
                           <button 
-                            onClick={(e) => handleTrackClick(e, order.trackingNumber!)}
+                            onClick={(e) => handleTrackClick(e, order.supplierTrackingNumber!)}
                             className="w-full text-[11px] text-right font-mono truncate text-indigo-400/80 hover:text-indigo-400 hover:underline transition-all block"
                             title="点击追踪国际运单"
                           >
-                            {order.trackingNumber}
+                            {order.supplierTrackingNumber}
                           </button>
                         ) : (
                           <p className="text-[11px] text-right font-mono truncate text-indigo-400/80">待录入</p>

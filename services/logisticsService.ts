@@ -25,12 +25,15 @@ const map17TrackStatus = (code: string): string => {
 export const syncOrderLogistics = async (orders: Order[], token: string): Promise<{ updatedOrders: Order[], count: number, message: string }> => {
   let updatedCount = 0;
   const newOrders = [...orders]; 
+  // 排除已完成或取消的订单
   const activeOrders = newOrders.filter(o => o.status !== OrderStatus.DELIVERED && o.status !== OrderStatus.CANCELLED);
 
   if (!token) {
+    // 基础逻辑：如果提供了单号但状态是等待采购，自动推进到已订购
     activeOrders.forEach(order => {
       let changed = false;
-      if (order.supplierTrackingNumber && order.status === OrderStatus.PENDING) {
+      // 注意：由于用户数据反转，现在采购物流号位于 trackingNumber
+      if (order.trackingNumber && order.status === OrderStatus.PENDING) {
         order.status = OrderStatus.PURCHASED;
         order.detailedStatus = '已采购 (本地推断)';
         changed = true;
@@ -49,9 +52,10 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
   }
 
   try {
+    // 根据用户导入数据现状，采购原始单号现在位于 trackingNumber 字段
     const payload = activeOrders
-      .filter(o => !!o.supplierTrackingNumber)
-      .map(o => ({ number: o.supplierTrackingNumber }));
+      .filter(o => !!o.trackingNumber)
+      .map(o => ({ number: o.trackingNumber }));
 
     if (payload.length === 0) {
       return { updatedOrders: newOrders, count: 0, message: '没有发现带有商家发货单号的活跃订单' };
@@ -79,8 +83,9 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
 
     activeOrders.forEach(order => {
       let changed = false;
-      if (order.supplierTrackingNumber && order.status !== OrderStatus.DELIVERED && order.status !== OrderStatus.SHIPPED) {
-         const info = trackResults.find(r => r.number === order.supplierTrackingNumber);
+      // 使用反转后的字段 trackingNumber 进行匹配和状态判定
+      if (order.trackingNumber && order.status !== OrderStatus.DELIVERED && order.status !== OrderStatus.SHIPPED) {
+         const info = trackResults.find(r => r.number === order.trackingNumber);
          if (info?.track_info?.latest_status) {
             const statusCode = info.track_info.latest_status.status;
             const newDetail = map17TrackStatus(statusCode);
@@ -90,11 +95,13 @@ export const syncOrderLogistics = async (orders: Order[], token: string): Promis
                 changed = true;
             }
 
+            // 签收判定
             if (statusCode === '40' && order.status !== OrderStatus.READY_TO_SHIP) {
                 order.status = OrderStatus.READY_TO_SHIP;
                 order.detailedStatus = '商家已送达仓库';
                 changed = true;
             }
+            // 运输判定
             else if ((statusCode === '10' || statusCode === '30') && order.status === OrderStatus.PENDING) {
                 order.status = OrderStatus.PURCHASED;
                 order.detailedStatus = '商家已发货';

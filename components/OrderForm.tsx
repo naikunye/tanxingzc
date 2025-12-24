@@ -168,10 +168,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-16">
             
+            {/* 左侧：采购详细信息 */}
             <div className="space-y-8">
                 <SectionHeader icon={ClipboardList} title="采购详细信息" subtitle="Procurement Details" />
                 
                 <div className="space-y-6">
+                    {/* 商品图上传与预览区 */}
                     <div className="space-y-3">
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">商品缩略图</label>
                         <div className="flex items-start gap-6">
@@ -243,11 +245,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                         <div className="space-y-3">
                             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">平台物流追踪号</label>
                             <div className="relative">
-                                <input type="text" name="supplierTrackingNumber" value={formData.supplierTrackingNumber} onChange={handleChange} className="w-full px-6 py-4.5 pr-14 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="采购网站原始单号" />
-                                {formData.supplierTrackingNumber && (
+                                {/* 根据用户导入数据现状，此处改为映射到 trackingNumber (原 Supplier Tracking 数据现在在该字段) */}
+                                <input type="text" name="trackingNumber" value={formData.trackingNumber} onChange={handleChange} className="w-full px-6 py-4.5 pr-14 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="采购网站原始单号" />
+                                {formData.trackingNumber && (
                                     <button 
                                         type="button" 
-                                        onClick={() => handleTrackClick(formData.supplierTrackingNumber!)}
+                                        onClick={() => handleTrackClick(formData.trackingNumber!)}
                                         className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all"
                                         title="追踪此单号"
                                     >
@@ -270,6 +273,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                 </div>
             </div>
 
+            {/* 右侧：收货与物流信息 */}
             <div className="space-y-8">
                 <SectionHeader icon={Truck} title="收货与物流信息" subtitle="Delivery & Logistics" />
 
@@ -301,11 +305,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, customers = 
                     <div className="space-y-3">
                         <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">国际转运/自发货单号</label>
                         <div className="relative">
-                            <input type="text" name="trackingNumber" value={formData.trackingNumber} onChange={handleChange} className="w-full px-6 py-4.5 pr-14 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="输入用于提供给买家的物流单号" />
-                            {formData.trackingNumber && (
+                            {/* 根据用户导入数据现状，此处改为映射到 supplierTrackingNumber (原 Buyer Tracking 数据现在在该字段) */}
+                            <input type="text" name="supplierTrackingNumber" value={formData.supplierTrackingNumber} onChange={handleChange} className="w-full px-6 py-4.5 pr-14 bg-black/20 border border-white/5 rounded-2xl text-white outline-none" placeholder="输入用于提供给买家的物流单号" />
+                            {formData.supplierTrackingNumber && (
                                 <button 
                                     type="button" 
-                                    onClick={() => handleTrackClick(formData.trackingNumber!)}
+                                    onClick={() => handleTrackClick(formData.supplierTrackingNumber!)}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all"
                                     title="追踪此单号"
                                 >
